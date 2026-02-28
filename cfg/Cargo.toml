@@ -1,0 +1,15 @@
+[package]
+name = "cfg"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+bril-rs = { version = "0.1.0", path = "../bril-rs", features = [
+  "ssa",
+  "memory",
+  "float",
+  "speculate",
+  "position",
+] }
+snafu = { version = "0.9.0" }
+argh = { version = "0.1.19" }
