@@ -6,6 +6,7 @@ use std::{
 
 use argh::FromArgs;
 use bril_rs::load_program_from_read;
+use cfg::util::cfg::get_cfg;
 use snafu::{ResultExt, Whatever};
 
 #[derive(FromArgs)]
@@ -37,7 +38,8 @@ fn main() -> Result<(), Whatever> {
     };
 
     let program = load_program_from_read(reader);
+    let cfg = get_cfg(program);
 
-    println!("{}", program);
+    println!("{:?}", cfg);
     Ok(())
 }
