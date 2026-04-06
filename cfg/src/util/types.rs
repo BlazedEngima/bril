@@ -1,6 +1,7 @@
 use bril_rs::{Instruction, Position};
+use indexmap::IndexMap;
 use std::{
-    collections::HashMap,
+    collections::{HashMap, HashSet},
     fmt::{Debug, Display, Formatter, Result},
     hash::{Hash, Hasher},
 };
@@ -21,14 +22,14 @@ pub struct Block {
 
 impl Display for Label {
     fn fmt(&self, f: &mut Formatter<'_>) -> Result {
-        writeln!(f, "{}", self.name)?;
+        write!(f, "{}", self.name)?;
         Ok(())
     }
 }
 
 impl Debug for Label {
     fn fmt(&self, f: &mut Formatter<'_>) -> Result {
-        writeln!(f, "{}", self.name)?;
+        write!(f, "{}", self.name)?;
         Ok(())
     }
 }
@@ -72,5 +73,7 @@ impl Debug for Block {
     }
 }
 
-pub type BlockMap = HashMap<Label, Block>; // Container for individual code block
-pub type ProgramMap = HashMap<Label, BlockMap>; // Container for functions including their code blocks
+pub type BlockMap = IndexMap<Label, Block>; // Container for individual code block
+pub type ProgramMap = IndexMap<Label, BlockMap>; // Container for functions including their code blocks
+pub type BlockSuccessorMap = HashMap<Label, HashSet<String>>; // Container for the successor map of a code block (BlockLabel -> SucessorLabels)
+pub type ProgramSuccessorMap = HashMap<Label, BlockSuccessorMap>; // Container for the successor map of the whole program (Func -> BlockSucessorMap)
