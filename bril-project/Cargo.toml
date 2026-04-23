@@ -1,9 +1,8 @@
-[package]
-name = "cfg"
-version = "0.1.0"
-edition = "2024"
+[workspace]
+members = ["cfg", "tdce"]
+resolver = "2"
 
-[dependencies]
+[workspace.dependencies]
 bril-rs = { version = "0.1.0", path = "../bril-rs", features = [
   "ssa",
   "memory",

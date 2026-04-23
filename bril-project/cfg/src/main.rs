@@ -6,10 +6,7 @@ use std::{
 
 use argh::FromArgs;
 use bril_rs::load_program_from_read;
-use cfg::util::{
-    cfg::{get_cfg, get_successor_map},
-    print::print_graphviz,
-};
+use cfg::core::{get_cfg, get_successor_map, print_graphviz};
 use snafu::{ResultExt, Whatever};
 
 #[derive(FromArgs)]
@@ -25,7 +22,7 @@ struct Opts {
 fn main() -> Result<(), Whatever> {
     let opts = argh::from_env::<Opts>();
 
-    let (input_path_string, mut reader): (String, Box<dyn Read>) = {
+    let (_, reader): (String, Box<dyn Read>) = {
         if let Some(input_path) = opts.input_path {
             let input_path_string = input_path.to_string_lossy().to_string();
             (
