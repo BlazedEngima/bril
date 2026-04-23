@@ -7,6 +7,7 @@ node_modules/
 hypothesis_*
 __pycache__
 .vscode
+**/target
 
 **/*.o
 .DS_Store
