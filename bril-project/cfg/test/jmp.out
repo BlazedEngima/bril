@@ -1,7 +1,21 @@
-diagraph main {
-    somewhere;
-    block_1;
-    block_0;
-    block_1 -> somewhere;
-    block_0 -> somewhere;
-}
+BB0:
+  instructions:
+    v: int = const 4;
+    jmp .somewhere;
+
+  successors: [2]
+
+BB1:
+  instructions:
+    v: int = const 2;
+
+  successors: [2]
+
+BB2 (somewhere):
+  instructions:
+    print v;
+
+  successors: []
+
+
+
