@@ -1,30 +1,39 @@
-use crate::util::types::{
-    Block, BlockMap, BlockSuccessorMap, Label, ProgramMap, ProgramSuccessorMap,
-};
+use std::collections::HashMap;
+
+use crate::cfg_types::{BasicBlock, BlockId, FunctionCFG, Label, ProgramCFG};
 use bril_rs::{Code, EffectOps, Instruction, Program};
-use indexmap::IndexMap;
 
 // If previous block has no name then assign some branch name
-pub fn close_block(block_map: &mut BlockMap, block: &mut Block, counter: &mut u64) {
-    // If block instruction is empty, do nothing
-    if block.instrs.is_empty() {
+fn close_block(
+    function_cfg: &mut FunctionCFG,
+    block: &mut BasicBlock,
+    id_counter: &mut BlockId,
+    label_to_block_id: &mut HashMap<String, BlockId>,
+) {
+    if block.is_empty() {
         return;
     }
 
-    if block.label.name.is_empty() {
-        block.label.name = format!("block_{}", counter);
-        *counter += 1;
+    // When encountering a named label, this will be skipped
+    // as it will insert the block metadata right away
+    if !function_cfg.has_id(id_counter) {
+        let label_name = format!("BB{}", id_counter);
+        label_to_block_id.insert(label_name, *id_counter);
     }
 
-    block_map.insert(block.label.clone(), block.clone());
+    block.set_id(*id_counter);
+    *id_counter += 1;
+
+    function_cfg.insert_block(block.clone());
     block.clear();
 }
 
-pub fn process_instruction(
-    block_map: &mut BlockMap,
-    block: &mut Block,
+fn process_instruction(
+    function_cfg: &mut FunctionCFG,
+    block: &mut BasicBlock,
     instr: Instruction,
-    counter: &mut u64,
+    id_counter: &mut BlockId,
+    label_to_block_id: &mut HashMap<String, BlockId>,
 ) {
     match instr {
         Instruction::Effect {
@@ -42,104 +51,74 @@ pub fn process_instruction(
                 pos,
             };
 
-            block.instrs.push(effect_instr);
+            block.insert_instr(effect_instr);
             // End of block instructions are jump, branch, and return
             match op {
                 EffectOps::Jump | EffectOps::Branch | EffectOps::Return => {
-                    close_block(block_map, block, counter);
+                    close_block(function_cfg, block, id_counter, label_to_block_id);
                 }
 
                 _ => {}
             }
         }
-        _ => block.instrs.push(instr),
+        _ => block.insert_instr(instr),
     }
 }
 
-pub fn get_code_block(code: Vec<Code>) -> BlockMap {
-    let mut block_map = IndexMap::new();
-    let mut block = Block::new();
-    let mut counter = 0;
+fn insert_code_blocks(
+    function_cfg: &mut FunctionCFG,
+    code: Vec<Code>,
+    label_to_block_id: &mut HashMap<String, BlockId>,
+) {
+    let mut block = BasicBlock::default();
+    let mut id_counter = 0;
     for instr in code {
         match instr {
             Code::Instruction(instr) => {
-                process_instruction(&mut block_map, &mut block, instr, &mut counter)
+                process_instruction(
+                    function_cfg,
+                    &mut block,
+                    instr,
+                    &mut id_counter,
+                    label_to_block_id,
+                );
             }
-            // If block hits label, then push into the block_map
+            // If block hits label, then push previous block into function and set name of new one
             Code::Label { label, pos } => {
-                let label = Label {
-                    name: label,
+                // Cloase current block
+                close_block(function_cfg, &mut block, &mut id_counter, label_to_block_id);
+
+                // Insert new block metadata into FunctionCFG
+                let name = Label {
+                    name: label.clone(),
                     position: pos,
                 };
 
-                close_block(&mut block_map, &mut block, &mut counter);
-                block.label = label;
+                function_cfg.insert_block_id(id_counter, name);
+                label_to_block_id.insert(label, id_counter);
             }
         }
     }
 
     // Add to block map if block has contents after parsing everything
-    close_block(&mut block_map, &mut block, &mut counter);
-    block_map
+    close_block(function_cfg, &mut block, &mut id_counter, label_to_block_id);
 }
 
-pub fn get_successors(block_map: &BlockMap) -> BlockSuccessorMap {
-    let mut block_successor_map = IndexMap::new();
-
-    for (i, (label, block)) in block_map.iter().enumerate() {
-        let last_instr = block
-            .instrs
-            .last()
-            .expect("Instruction vector in Block should not be empty");
-        let mut successors = Vec::new();
-
-        // Extract successors from last instruction in basic block
-        match last_instr {
-            Instruction::Effect { labels, op, .. } => {
-                if *op == EffectOps::Return {
-                    continue;
-                }
-
-                successors.extend(labels.clone());
-            }
-            Instruction::Value { labels, .. } => successors.extend(labels.clone()),
-            _ => {
-                // Check if the next instruction is a new basic block and add it
-                if let Some((label, _)) = block_map.get_index(i + 1) {
-                    successors.push(label.name.clone());
-                }
-            }
-        }
-
-        block_successor_map.insert(label.clone(), successors.clone());
-        successors.clear();
-    }
-
-    block_successor_map
-}
-
-pub fn get_successor_map(program_map: &ProgramMap) -> ProgramSuccessorMap {
-    let mut successor_map = IndexMap::new();
-    for (func_name, block_map) in program_map.iter() {
-        let sucessors = get_successors(block_map);
-
-        successor_map.insert(func_name.clone(), sucessors);
-    }
-
-    successor_map
-}
-
-pub fn get_cfg(program: Program) -> ProgramMap {
-    let mut program_map = IndexMap::new();
+pub fn construct_cfg(program: Program) -> ProgramCFG {
+    let mut program_cfg = ProgramCFG::default();
+    let mut label_to_block_id = HashMap::new();
     for function in program.functions {
         let function_label = Label {
             name: function.name,
             position: function.pos,
         };
 
-        let code_block = get_code_block(function.instrs);
-        program_map.insert(function_label, code_block);
+        let mut function_cfg = FunctionCFG::new(function_label);
+        insert_code_blocks(&mut function_cfg, function.instrs, &mut label_to_block_id);
+        function_cfg.build_sucessors(&label_to_block_id);
+
+        program_cfg.insert_function_cfg(function_cfg);
     }
 
-    program_map
+    program_cfg
 }
