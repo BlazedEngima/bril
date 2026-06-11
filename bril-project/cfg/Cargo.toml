@@ -7,4 +7,3 @@ edition = "2024"
 bril-rs = { workspace = true }
 snafu = { workspace = true }
 argh = { workspace = true }
-indexmap = { workspace = true }

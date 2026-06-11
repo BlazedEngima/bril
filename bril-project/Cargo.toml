@@ -12,4 +12,3 @@ bril-rs = { version = "0.1.0", path = "../bril-rs", features = [
 ] }
 snafu = { version = "0.9.0" }
 argh = { version = "0.1.19" }
-indexmap = { version = "2.13.1" }
