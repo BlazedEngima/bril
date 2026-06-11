@@ -41,7 +41,6 @@ fn main() -> Result<(), Whatever> {
     let cfg = get_cfg(program);
     let successor_map = get_successor_map(&cfg);
 
-    println!("{:?}", cfg);
     print_graphviz(&successor_map, &mut stdout()).whatever_context("Unable to write to stdout")?;
 
     Ok(())
