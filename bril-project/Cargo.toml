@@ -1,5 +1,5 @@
 [workspace]
-members = ["cfg", "tdce"]
+members = ["cfg"]
 resolver = "2"
 
 [workspace.dependencies]
