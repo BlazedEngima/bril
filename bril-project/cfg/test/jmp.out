@@ -1,0 +1,7 @@
+diagraph main {
+    somewhere;
+    block_1;
+    block_0;
+    block_1 -> somewhere;
+    block_0 -> somewhere;
+}
