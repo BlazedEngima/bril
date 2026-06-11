@@ -1,12 +1,12 @@
 use std::{
     fs,
-    io::{Read, stdin, stdout},
+    io::{Read, stdin},
     path::PathBuf,
 };
 
 use argh::FromArgs;
 use bril_rs::load_program_from_read;
-use cfg::core::{get_cfg, get_successor_map, print_graphviz};
+use cfg::core::construct_cfg;
 use snafu::{ResultExt, Whatever};
 
 #[derive(FromArgs)]
@@ -38,10 +38,8 @@ fn main() -> Result<(), Whatever> {
     };
 
     let program = load_program_from_read(reader);
-    let cfg = get_cfg(program);
-    let successor_map = get_successor_map(&cfg);
+    let cfg = construct_cfg(program);
 
-    print_graphviz(&successor_map, &mut stdout()).whatever_context("Unable to write to stdout")?;
-
+    println!("{:?}", cfg);
     Ok(())
 }
