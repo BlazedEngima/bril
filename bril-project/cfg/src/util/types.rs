@@ -1,10 +1,11 @@
 use bril_rs::{Instruction, Position};
 use indexmap::IndexMap;
 use std::{
-    collections::{HashMap, HashSet},
     fmt::{Debug, Display, Formatter, Result},
     hash::{Hash, Hasher},
 };
+
+pub type BlockId = usize;
 
 /// Essentially the name of any block of instructions
 /// Can also be the name of a function or code block
@@ -75,5 +76,5 @@ impl Debug for Block {
 
 pub type BlockMap = IndexMap<Label, Block>; // Container for individual code block
 pub type ProgramMap = IndexMap<Label, BlockMap>; // Container for functions including their code blocks
-pub type BlockSuccessorMap = HashMap<Label, HashSet<String>>; // Container for the successor map of a code block (BlockLabel -> SucessorLabels)
-pub type ProgramSuccessorMap = HashMap<Label, BlockSuccessorMap>; // Container for the successor map of the whole program (Func -> BlockSucessorMap)
+pub type BlockSuccessorMap = IndexMap<Label, Vec<String>>; // Container for the successor map of a code block (BlockLabel -> SucessorLabels)
+pub type ProgramSuccessorMap = IndexMap<Label, BlockSuccessorMap>; // Container for the successor map of the whole program (Func -> BlockSucessorMap)

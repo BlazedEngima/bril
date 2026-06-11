@@ -3,10 +3,14 @@ use crate::util::types::{
 };
 use bril_rs::{Code, EffectOps, Instruction, Program};
 use indexmap::IndexMap;
-use std::collections::{HashMap, HashSet};
 
 // If previous block has no name then assign some branch name
 pub fn close_block(block_map: &mut BlockMap, block: &mut Block, counter: &mut u64) {
+    // If block instruction is empty, do nothing
+    if block.instrs.is_empty() {
+        return;
+    }
+
     if block.label.name.is_empty() {
         block.label.name = format!("block_{}", counter);
         *counter += 1;
@@ -80,14 +84,14 @@ pub fn get_code_block(code: Vec<Code>) -> BlockMap {
 }
 
 pub fn get_successors(block_map: &BlockMap) -> BlockSuccessorMap {
-    let mut block_successor_map = HashMap::new();
+    let mut block_successor_map = IndexMap::new();
 
     for (i, (label, block)) in block_map.iter().enumerate() {
         let last_instr = block
             .instrs
             .last()
             .expect("Instruction vector in Block should not be empty");
-        let mut successors = HashSet::new();
+        let mut successors = Vec::new();
 
         // Extract successors from last instruction in basic block
         match last_instr {
@@ -102,7 +106,7 @@ pub fn get_successors(block_map: &BlockMap) -> BlockSuccessorMap {
             _ => {
                 // Check if the next instruction is a new basic block and add it
                 if let Some((label, _)) = block_map.get_index(i + 1) {
-                    successors.insert(label.name.clone());
+                    successors.push(label.name.clone());
                 }
             }
         }
@@ -115,7 +119,7 @@ pub fn get_successors(block_map: &BlockMap) -> BlockSuccessorMap {
 }
 
 pub fn get_successor_map(program_map: &ProgramMap) -> ProgramSuccessorMap {
-    let mut successor_map = HashMap::new();
+    let mut successor_map = IndexMap::new();
     for (func_name, block_map) in program_map.iter() {
         let sucessors = get_successors(block_map);
 
