@@ -1,0 +1,22 @@
+BB0:
+  instructions:
+    v: int = const 4;
+    b: bool = const false;
+    br b .there .here;
+
+  successors: [2, 1]
+
+BB1 (here):
+  instructions:
+    v: int = const 2;
+
+  successors: [2]
+
+BB2 (there):
+  instructions:
+    print v;
+
+  successors: []
+
+
+

@@ -1,6 +1,5 @@
-use std::collections::HashMap;
-
-use crate::cfg_types::{BasicBlock, BlockId, FunctionCFG, Label, ProgramCFG};
+use crate::types::{BasicBlock, BlockId, FunctionCFG, Label, ProgramCFG};
+use ahash::HashMap;
 use bril_rs::{Code, EffectOps, Instruction, Program};
 
 // If previous block has no name then assign some branch name
@@ -106,7 +105,7 @@ fn insert_code_blocks(
 
 pub fn construct_cfg(program: Program) -> ProgramCFG {
     let mut program_cfg = ProgramCFG::default();
-    let mut label_to_block_id = HashMap::new();
+    let mut label_to_block_id = HashMap::default();
     for function in program.functions {
         let function_label = Label {
             name: function.name,

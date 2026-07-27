@@ -1,9 +1,0 @@
-[package]
-name = "cfg"
-version = "0.1.0"
-edition = "2024"
-
-[dependencies]
-bril-rs = { workspace = true }
-snafu = { workspace = true }
-argh = { workspace = true }

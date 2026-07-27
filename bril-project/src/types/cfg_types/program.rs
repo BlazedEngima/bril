@@ -1,4 +1,4 @@
-use crate::cfg_types::function::FunctionCFG;
+use crate::types::FunctionCFG;
 use std::fmt::{Debug, Display, Formatter, Result};
 
 #[derive(Default, Clone)]

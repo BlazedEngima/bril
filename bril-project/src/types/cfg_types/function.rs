@@ -1,10 +1,8 @@
 use bril_rs::Instruction;
 
-use crate::cfg_types::{BasicBlock, BlockId, Label};
-use std::{
-    collections::HashMap,
-    fmt::{Debug, Display, Formatter, Result},
-};
+use crate::types::{BasicBlock, BlockId, Label};
+use ahash::HashMap;
+use std::fmt::{Debug, Display, Formatter, Result};
 
 #[derive(Default, Clone)]
 pub struct FunctionCFG {

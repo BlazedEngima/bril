@@ -1,8 +1,9 @@
-[workspace]
-members = ["cfg"]
-resolver = "2"
+[package]
+name = "bril-compiler"
+version = "0.1.0"
+edition = "2024"
 
-[workspace.dependencies]
+[dependencies]
 bril-rs = { version = "0.1.0", path = "../bril-rs", features = [
   "ssa",
   "memory",
@@ -12,3 +13,4 @@ bril-rs = { version = "0.1.0", path = "../bril-rs", features = [
 ] }
 snafu = { version = "0.9.0" }
 argh = { version = "0.1.19" }
+ahash = { version = "0.8.12" }

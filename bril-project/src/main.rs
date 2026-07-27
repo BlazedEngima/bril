@@ -5,8 +5,8 @@ use std::{
 };
 
 use argh::FromArgs;
+use bril_compiler::cfg::construct_cfg;
 use bril_rs::load_program_from_read;
-use cfg::core::construct_cfg;
 use snafu::{ResultExt, Whatever};
 
 #[derive(FromArgs)]
