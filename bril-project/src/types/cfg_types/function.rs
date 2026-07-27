@@ -64,7 +64,11 @@ impl FunctionCFG {
             // Not sure if a Value instruction will ever be a terminating instruction in a basic
             // block or why theres a labels field in Instruction. Will leave it here for now
             // until I find enough reason to justify removing it.
-            Instruction::Effect { labels, .. } | Instruction::Value { labels, .. } => labels
+            //
+            // EDIT: Removed Instruction::Value as it should never be a terminating instruction.
+            // Labels are any name associated with the instruction so a branch effect and assign value
+            // instruction will both have labels.
+            Instruction::Effect { labels, .. } => labels
                 .iter()
                 .map(|label| {
                     *label_to_block_id
