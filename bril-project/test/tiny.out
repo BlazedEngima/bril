@@ -1,0 +1,9 @@
+BB0:
+  instructions:
+    v: int = const 5;
+    print v;
+
+  successors: []
+
+
+

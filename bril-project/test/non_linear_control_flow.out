@@ -1,0 +1,62 @@
+BB0:
+  instructions:
+    jmp .start;
+
+  successors: [8]
+
+BB1 (end):
+  instructions:
+    print x_0_2;
+    print x_1_2;
+    ret;
+
+  successors: []
+
+BB2 (l_1_3):
+  instructions:
+    jmp .end;
+
+  successors: [1]
+
+BB3 (l_1_2):
+  instructions:
+    x_1_2: int = const 0;
+    jmp .l_1_3;
+
+  successors: [2]
+
+BB4 (l_1_1):
+  instructions:
+    x_1_1: int = const 1;
+    jmp .l_1_3;
+
+  successors: [2]
+
+BB5 (l_0_3):
+  instructions:
+    br b1 .l_1_1 .l_1_2;
+
+  successors: [4, 3]
+
+BB6 (l_0_2):
+  instructions:
+    x_0_2: int = const 2;
+    jmp .l_0_3;
+
+  successors: [5]
+
+BB7 (l_0_1):
+  instructions:
+    x_0_1: int = const 3;
+    jmp .l_0_3;
+
+  successors: [5]
+
+BB8 (start):
+  instructions:
+    br b0 .l_0_1 .l_0_2;
+
+  successors: [7, 6]
+
+
+

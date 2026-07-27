@@ -1,0 +1,16 @@
+BB0:
+  instructions:
+    v: int = const 4;
+    print v;
+    ret;
+
+  successors: []
+
+BB1:
+  instructions:
+    print v;
+
+  successors: []
+
+
+
