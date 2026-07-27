@@ -10,6 +10,14 @@ impl ProgramCFG {
     pub fn insert_function_cfg(&mut self, function_cfg: FunctionCFG) {
         self.functions.push(function_cfg);
     }
+
+    pub fn get_functions(&self) -> &[FunctionCFG] {
+        &self.functions
+    }
+
+    pub fn get_functions_mut(&mut self) -> &mut [FunctionCFG] {
+        &mut self.functions
+    }
 }
 
 /// Full debugging information of Program

@@ -1,7 +1,7 @@
-pub mod block;
-pub mod function;
-pub mod label;
-pub mod program;
+mod block;
+mod function;
+mod label;
+mod program;
 
 pub use block::{BasicBlock, BlockId};
 pub use function::FunctionCFG;

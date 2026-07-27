@@ -40,6 +40,14 @@ impl FunctionCFG {
         self.blocks.is_empty()
     }
 
+    pub fn get_blocks(&self) -> &[BasicBlock] {
+        &self.blocks
+    }
+
+    pub fn get_blocks_mut(&mut self) -> &mut [BasicBlock] {
+        &mut self.blocks
+    }
+
     pub fn build_sucessors(&mut self, label_to_block_id: &HashMap<String, BlockId>) {
         let num_blocks = self.blocks.len();
         for (idx, block) in self.blocks.iter_mut().enumerate() {
