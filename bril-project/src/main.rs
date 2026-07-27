@@ -5,7 +5,7 @@ use std::{
 };
 
 use argh::FromArgs;
-use bril_compiler::cfg::construct_cfg;
+use bril_compiler::{cfg::construct_cfg, tdce::eliminate_dead_code};
 use bril_rs::load_program_from_read;
 use snafu::{ResultExt, Whatever};
 
@@ -38,7 +38,8 @@ fn main() -> Result<(), Whatever> {
     };
 
     let program = load_program_from_read(reader);
-    let cfg = construct_cfg(program);
+    let mut cfg = construct_cfg(program);
+    eliminate_dead_code(&mut cfg);
 
     println!("{:?}", cfg);
     Ok(())
