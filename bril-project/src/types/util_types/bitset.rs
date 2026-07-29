@@ -5,14 +5,14 @@ pub struct BitSet {
 
 impl BitSet {
     pub fn new_all_true(size: usize) -> Self {
-        let num_words = (size + 63) / 64;
+        let num_words = (size + 63).div_ceil(64);
         Self {
             words: vec![!0u64; num_words], // !0u64 sets all 64 bits to 1
         }
     }
 
     pub fn new_all_false(size: usize) -> Self {
-        let num_words = (size + 63) / 64;
+        let num_words = (size + 63).div_ceil(64);
         Self {
             words: vec![0u64; num_words],
         }
