@@ -2,12 +2,34 @@ use std::{
     fs,
     io::{Read, stdin},
     path::PathBuf,
+    str::FromStr,
 };
 
 use argh::FromArgs;
 use bril_compiler::{cfg::construct_cfg, tdce::eliminate_dead_code};
 use bril_rs::load_program_from_read;
 use snafu::{ResultExt, Whatever};
+
+#[derive(Debug, Default)]
+struct Modules {
+    pub t: bool,
+}
+
+// Convert a string like "ctdegd" into active flags
+impl FromStr for Modules {
+    type Err = String;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        let mut modules = Modules::default();
+        for ch in s.chars() {
+            match ch {
+                't' => modules.t = true,
+                unknown => return Err(format!("Unknown module code: '{unknown}'")),
+            }
+        }
+        Ok(modules)
+    }
+}
 
 #[derive(FromArgs)]
 /// Generates a CFG from Bril's canonical JSON representation
@@ -16,6 +38,9 @@ struct Opts {
     /// input Bril file: omit for stdin
     #[argh(positional)]
     input_path: Option<PathBuf>,
+    /// active module letters, e.g., -m ct
+    #[argh(option, short = 'm', default = "Modules::default()")]
+    modules: Modules,
 }
 
 #[snafu::report]
@@ -39,7 +64,10 @@ fn main() -> Result<(), Whatever> {
 
     let program = load_program_from_read(reader);
     let mut cfg = construct_cfg(program);
-    eliminate_dead_code(&mut cfg);
+
+    if opts.modules.t {
+        eliminate_dead_code(&mut cfg);
+    }
 
     println!("{:?}", cfg);
     Ok(())
