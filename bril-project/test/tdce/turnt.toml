@@ -1,1 +1,1 @@
-command = "bril2json < {filename} | cargo run | bril2txt"
+command = "bril2json < {filename} | cargo run --release -- -m t"
