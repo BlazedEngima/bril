@@ -1,3 +1,5 @@
+use bril_rs::Program;
+
 use crate::types::FunctionCFG;
 use std::fmt::{Debug, Display, Formatter, Result};
 
@@ -37,5 +39,13 @@ impl Display for ProgramCFG {
         }
 
         Ok(())
+    }
+}
+
+impl From<ProgramCFG> for Program {
+    fn from(cfg: ProgramCFG) -> Self {
+        Program {
+            functions: cfg.functions.into_iter().map(|f| f.into()).collect(),
+        }
     }
 }

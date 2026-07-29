@@ -107,12 +107,13 @@ pub fn construct_cfg(program: Program) -> ProgramCFG {
     let mut program_cfg = ProgramCFG::default();
     let mut label_to_block_id = HashMap::default();
     for function in program.functions {
-        let function_label = Label {
-            name: function.name,
-            position: function.pos,
-        };
+        let mut function_cfg = FunctionCFG::new(
+            function.name,
+            function.args,
+            function.return_type,
+            function.pos,
+        );
 
-        let mut function_cfg = FunctionCFG::new(function_label);
         insert_code_blocks(&mut function_cfg, function.instrs, &mut label_to_block_id);
         function_cfg.build_sucessors(&label_to_block_id);
 

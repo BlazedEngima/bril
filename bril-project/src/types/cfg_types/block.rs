@@ -53,6 +53,10 @@ impl BasicBlock {
         &self.instrs
     }
 
+    pub fn into_instrs(self) -> Vec<Instruction> {
+        self.instrs
+    }
+
     pub fn get_successors(&self) -> &[BlockId] {
         &self.successors
     }

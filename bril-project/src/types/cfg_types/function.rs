@@ -1,4 +1,4 @@
-use bril_rs::Instruction;
+use bril_rs::{Argument, Code, Function, Instruction, Position, Type};
 
 use crate::types::{BasicBlock, BlockId, Label};
 use ahash::HashMap;
@@ -6,17 +6,28 @@ use std::fmt::{Debug, Display, Formatter, Result};
 
 #[derive(Default, Clone)]
 pub struct FunctionCFG {
-    name: Label,
+    name: String,
     blocks: Vec<BasicBlock>,
+    args: Vec<Argument>,
+    return_type: Option<Type>,
     block_id_to_label: HashMap<BlockId, Label>,
+    pos: Option<Position>,
 }
 
 impl FunctionCFG {
-    pub fn new(name: Label) -> Self {
+    pub fn new(
+        name: String,
+        args: Vec<Argument>,
+        return_type: Option<Type>,
+        pos: Option<Position>,
+    ) -> Self {
         Self {
             name,
             blocks: Vec::default(),
+            args,
+            return_type,
             block_id_to_label: HashMap::default(),
+            pos,
         }
     }
 
@@ -149,5 +160,36 @@ impl Display for FunctionCFG {
 
         writeln!(f, "}}")?;
         Ok(())
+    }
+}
+
+impl From<FunctionCFG> for Function {
+    fn from(mut cfg: FunctionCFG) -> Self {
+        let mut instrs = Vec::new();
+
+        // Iterate through all basic blocks
+        for (id, block) in cfg.blocks.into_iter().enumerate() {
+            // 1. If this block has a label in the map, push a Code::Label
+            if let Some(label) = cfg.block_id_to_label.remove(&id) {
+                instrs.push(Code::Label {
+                    label: label.name,
+                    pos: label.position,
+                });
+            }
+
+            // 2. Push all instructions within the block as Code::Instruction
+            for instr in block.into_instrs() {
+                instrs.push(Code::Instruction(instr));
+            }
+        }
+
+        // Reconstruct the library's Function struct
+        Function {
+            args: cfg.args,
+            instrs,
+            name: cfg.name,
+            pos: cfg.pos,
+            return_type: cfg.return_type,
+        }
     }
 }

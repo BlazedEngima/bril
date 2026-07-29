@@ -7,11 +7,12 @@ use std::{
 
 use argh::FromArgs;
 use bril_compiler::{cfg::construct_cfg, tdce::eliminate_dead_code};
-use bril_rs::load_program_from_read;
+use bril_rs::{Program, load_program_from_read};
 use snafu::{ResultExt, Whatever};
 
 #[derive(Debug, Default)]
 struct Modules {
+    pub c: bool,
     pub t: bool,
 }
 
@@ -23,6 +24,7 @@ impl FromStr for Modules {
         let mut modules = Modules::default();
         for ch in s.chars() {
             match ch {
+                'c' => modules.c = true,
                 't' => modules.t = true,
                 unknown => return Err(format!("Unknown module code: '{unknown}'")),
             }
@@ -65,10 +67,15 @@ fn main() -> Result<(), Whatever> {
     let program = load_program_from_read(reader);
     let mut cfg = construct_cfg(program);
 
-    if opts.modules.t {
-        eliminate_dead_code(&mut cfg);
+    if opts.modules.c {
+        print!("{:?}", cfg);
     }
 
-    println!("{:?}", cfg);
+    if opts.modules.t {
+        eliminate_dead_code(&mut cfg);
+        let tdce_program: Program = cfg.into();
+        print!("{}", tdce_program);
+    }
+
     Ok(())
 }
