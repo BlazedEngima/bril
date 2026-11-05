@@ -1,4 +1,6 @@
-use crate::cfg_types::function::FunctionCFG;
+use bril_rs::Program;
+
+use crate::types::FunctionCFG;
 use std::fmt::{Debug, Display, Formatter, Result};
 
 #[derive(Default, Clone)]
@@ -9,6 +11,14 @@ pub struct ProgramCFG {
 impl ProgramCFG {
     pub fn insert_function_cfg(&mut self, function_cfg: FunctionCFG) {
         self.functions.push(function_cfg);
+    }
+
+    pub fn get_functions(&self) -> &[FunctionCFG] {
+        &self.functions
+    }
+
+    pub fn get_functions_mut(&mut self) -> &mut [FunctionCFG] {
+        &mut self.functions
     }
 }
 
@@ -29,5 +39,13 @@ impl Display for ProgramCFG {
         }
 
         Ok(())
+    }
+}
+
+impl From<ProgramCFG> for Program {
+    fn from(cfg: ProgramCFG) -> Self {
+        Program {
+            functions: cfg.functions.into_iter().map(|f| f.into()).collect(),
+        }
     }
 }
