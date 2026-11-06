@@ -53,6 +53,10 @@ impl BasicBlock {
         &self.instrs
     }
 
+    pub fn get_instrs_mut(&mut self) -> &mut [Instruction] {
+        &mut self.instrs
+    }
+
     pub fn into_instrs(self) -> Vec<Instruction> {
         self.instrs
     }
