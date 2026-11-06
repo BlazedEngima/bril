@@ -8,6 +8,7 @@ bril-rs = { version = "0.1.0", path = "../bril-rs", features = [
   "ssa",
   "memory",
   "float",
+  "char",
   "speculate",
   "position",
 ] }
