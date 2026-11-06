@@ -6,7 +6,7 @@ use std::{
 };
 
 use argh::FromArgs;
-use bril_compiler::{cfg::construct_cfg, tdce::eliminate_dead_code};
+use bril_compiler::{cfg::construct_cfg, tdce::DeadCodeElimination};
 use bril_rs::{Program, load_program_from_read};
 use snafu::{ResultExt, Whatever};
 
@@ -67,12 +67,13 @@ fn main() -> Result<(), Whatever> {
     let program = load_program_from_read(reader);
     let mut cfg = construct_cfg(program);
 
+    // For testing purposes
     if opts.modules.c {
         print!("{:?}", cfg);
     }
 
     if opts.modules.t {
-        eliminate_dead_code(&mut cfg);
+        DeadCodeElimination::run(&mut cfg);
         let tdce_program: Program = cfg.into();
         print!("{}", tdce_program);
     }
