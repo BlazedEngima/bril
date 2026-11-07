@@ -1,7 +1,11 @@
-use crate::types::{
-    BasicBlock, ConstantKey, ConstantValue, Expression, LVNTable, ProgramCFG, ValueNumber,
+use bril_rs::{ConstOps, Instruction, Literal, Position, ValueOps};
+
+use crate::{
+    lvn::{fold_arithmetic_operation, fold_logical_operation, fold_self_comparison},
+    types::{
+        BasicBlock, ConstantKey, ConstantValue, Expression, LVNTable, ProgramCFG, ValueNumber,
+    },
 };
-use bril_rs::{ConstOps, Instruction, Literal, Position, Type, ValueOps};
 
 pub struct LocalValueNumbering;
 
@@ -14,7 +18,7 @@ impl LocalValueNumbering {
     }
 
     // Sort commutative operation arguments
-    fn canonicalize_args(op: &ValueOps, args: &mut [ValueNumber]) {
+    fn canonicalize_expression_args(op: &ValueOps, args: &mut [ValueNumber]) {
         if Self::is_commutative(op) {
             args.sort_unstable();
         }
@@ -38,127 +42,22 @@ impl LocalValueNumbering {
         )
     }
 
-    fn literal_to_constant(literal: &Literal) -> ConstantValue {
+    fn literal_to_constant(literal: Literal) -> ConstantValue {
         match literal {
-            Literal::Int(i) => ConstantValue::Int(*i),
-            Literal::Bool(b) => ConstantValue::Bool(*b),
+            Literal::Int(i) => ConstantValue::Int(i),
+            Literal::Bool(b) => ConstantValue::Bool(b),
             Literal::Float(f) => ConstantValue::Float(f.to_bits()),
-            Literal::Char(c) => ConstantValue::Char(*c),
+            Literal::Char(c) => ConstantValue::Char(c),
         }
     }
 
-    fn constant_to_literal(value: &ConstantValue) -> Literal {
+    fn constant_to_literal(value: ConstantValue) -> Literal {
         match value {
-            ConstantValue::Int(value) => Literal::Int(*value),
-            ConstantValue::Bool(bool) => Literal::Bool(*bool),
-            ConstantValue::Float(bits) => Literal::Float(f64::from_bits(*bits)),
-            ConstantValue::Char(char) => Literal::Char(*char),
+            ConstantValue::Int(value) => Literal::Int(value),
+            ConstantValue::Bool(bool) => Literal::Bool(bool),
+            ConstantValue::Float(bits) => Literal::Float(f64::from_bits(bits)),
+            ConstantValue::Char(char) => Literal::Char(char),
         }
-    }
-
-    fn fold_operation(op: &ValueOps, operands: &[ConstantKey]) -> Option<ConstantKey> {
-        let (ty, value) = match (op, operands) {
-            (ValueOps::Not, [a]) => {
-                if a.ty != Type::Bool {
-                    return None;
-                }
-
-                let ConstantValue::Bool(value) = &a.value else {
-                    return None;
-                };
-
-                (Type::Bool, ConstantValue::Bool(!value))
-            }
-
-            // Integer arithmetic
-            (ValueOps::Add, [a, b])
-            | (ValueOps::Sub, [a, b])
-            | (ValueOps::Mul, [a, b])
-            | (ValueOps::Div, [a, b]) => {
-                if a.ty != Type::Int || b.ty != Type::Int {
-                    return None;
-                }
-
-                let (ConstantValue::Int(lhs), ConstantValue::Int(rhs)) = (&a.value, &b.value)
-                else {
-                    return None;
-                };
-
-                let result = match op {
-                    ValueOps::Add => lhs.checked_add(*rhs)?,
-                    ValueOps::Sub => lhs.checked_sub(*rhs)?,
-                    ValueOps::Mul => lhs.checked_mul(*rhs)?,
-                    ValueOps::Div => lhs.checked_div(*rhs)?,
-                    _ => unreachable!(),
-                };
-
-                (Type::Int, ConstantValue::Int(result))
-            }
-
-            // Equality
-            (ValueOps::Eq, [a, b]) => {
-                if a.ty != b.ty {
-                    return None;
-                }
-
-                let result = match (&a.value, &b.value) {
-                    (ConstantValue::Int(lhs), ConstantValue::Int(rhs)) => lhs == rhs,
-
-                    (ConstantValue::Bool(lhs), ConstantValue::Bool(rhs)) => lhs == rhs,
-
-                    _ => return None,
-                };
-
-                (Type::Bool, ConstantValue::Bool(result))
-            }
-
-            // Integer comparisons
-            (ValueOps::Lt | ValueOps::Gt | ValueOps::Le | ValueOps::Ge, [a, b]) => {
-                if a.ty != Type::Int || b.ty != Type::Int {
-                    return None;
-                }
-
-                let (ConstantValue::Int(lhs), ConstantValue::Int(rhs)) = (&a.value, &b.value)
-                else {
-                    return None;
-                };
-
-                let result = match op {
-                    ValueOps::Lt => lhs < rhs,
-                    ValueOps::Gt => lhs > rhs,
-                    ValueOps::Le => lhs <= rhs,
-                    ValueOps::Ge => lhs >= rhs,
-                    _ => unreachable!(),
-                };
-
-                (Type::Bool, ConstantValue::Bool(result))
-            }
-
-            // Boolean operations
-            (ValueOps::And | ValueOps::Or, [a, b]) => {
-                if a.ty != Type::Bool || b.ty != Type::Bool {
-                    return None;
-                }
-
-                let (ConstantValue::Bool(lhs), ConstantValue::Bool(rhs)) = (&a.value, &b.value)
-                else {
-                    return None;
-                };
-
-                let result = match op {
-                    ValueOps::And => *lhs && *rhs,
-                    ValueOps::Or => *lhs || *rhs,
-                    _ => unreachable!(),
-                };
-
-                (Type::Bool, ConstantValue::Bool(result))
-            }
-
-            // TODO: Add support for float operations and pointer operations
-            _ => return None,
-        };
-
-        Some(ConstantKey { ty, value })
     }
 
     fn assign_var_to_new_vn(table: &mut LVNTable, dest: &str) -> ValueNumber {
@@ -179,8 +78,8 @@ impl LocalValueNumbering {
         Instruction::Constant {
             dest: dest.to_owned(),
             op: ConstOps::Const,
-            const_type: constant_key.ty.clone(),
-            value: Self::constant_to_literal(&constant_key.value),
+            const_type: constant_key.ty,
+            value: Self::constant_to_literal(constant_key.value),
             pos: pos.clone(),
         }
     }
@@ -195,7 +94,7 @@ impl LocalValueNumbering {
             } => {
                 let key = ConstantKey {
                     ty: const_type.clone(),
-                    value: Self::literal_to_constant(value),
+                    value: Self::literal_to_constant(value.clone()),
                 };
 
                 let vn = match table.get_vn_from_constant(&key) {
@@ -221,9 +120,15 @@ impl LocalValueNumbering {
                 pos,
             } => {
                 let mut arg_vns: Vec<ValueNumber> = args
-                    .iter()
+                    .iter_mut()
                     .map(|arg| table.get_or_create_vn_from_variable(arg))
                     .collect();
+
+                for (arg, vn) in args.iter_mut().zip(&arg_vns) {
+                    if let Some(var) = table.get_variable_from_vn(*vn) {
+                        *arg = var.to_owned();
+                    }
+                }
 
                 // Special handling for id: Replace with Const
                 if *op == ValueOps::Id {
@@ -246,23 +151,28 @@ impl LocalValueNumbering {
                     return;
                 }
 
-                // Constant folding
                 // Find constants of arguments if there is any
-                let operand_constants: Option<Vec<ConstantKey>> = arg_vns
+                let operand_constants: Vec<Option<ConstantKey>> = arg_vns
                     .iter()
                     .map(|vn| table.get_constant_from_vn(vn).cloned())
                     .collect();
 
-                if let Some(operand_constants) = operand_constants
-                    && let Some(folded_constant) = Self::fold_operation(op, &operand_constants)
-                {
+                println!("{:?}", operand_constants);
+
+                // Comparison folding and constant folding
+                let folded_constant = fold_self_comparison(op, &arg_vns)
+                    .or_else(|| fold_arithmetic_operation(op, &operand_constants))
+                    .or_else(|| fold_logical_operation(op, &operand_constants));
+
+                if let Some(folded_constant) = folded_constant {
                     let vn = table.get_or_create_vn_from_constant(folded_constant.clone());
                     *instr = Self::create_const_instruction(table, vn, folded_constant, dest, pos);
                     return;
                 }
 
                 // Common Subexpression Elimination
-                Self::canonicalize_args(op, &mut arg_vns);
+                Self::canonicalize_expression_args(op, &mut arg_vns);
+
                 let expression = Expression {
                     op: *op,
                     args: arg_vns,
@@ -272,6 +182,14 @@ impl LocalValueNumbering {
                 // The expression may still exist in the expression table even if all
                 // variables holding its VN have since been reassigned.
                 if let Some(existing_vn) = table.get_vn_from_expression(&expression) {
+                    // Canonicalize operands to use the representative variable
+                    // for each value number.
+                    for (arg, vn) in args.iter_mut().zip(&expression.args) {
+                        if let Some(var) = table.get_variable_from_vn_except(*vn, arg) {
+                            *arg = var.to_owned();
+                        }
+                    }
+
                     // Only replace the computation with an Id if another variable still
                     // holds the result. Exclude dest to avoid generating `dest = id dest` when reassigning.
                     if let Some(var) = table.get_variable_from_vn_except(existing_vn, dest) {
@@ -292,7 +210,15 @@ impl LocalValueNumbering {
                 }
             }
 
-            _ => {}
+            Instruction::Effect { args, .. } => {
+                for arg in args.iter_mut() {
+                    if let Some(vn) = table.get_vn_from_variable(arg)
+                        && let Some(var) = table.get_variable_from_vn_except(vn, arg)
+                    {
+                        *arg = var.to_owned();
+                    }
+                }
+            }
         }
     }
 
