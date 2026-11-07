@@ -1,3 +1,4 @@
+# ARGS: l
 @main {
 .entry:
   zero : int = const 0;
