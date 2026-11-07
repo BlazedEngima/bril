@@ -1,9 +1,6 @@
-# CMD: bril2json < {filename} | python3 ../../lvn.py | python3 ../../tdce.py tdce | bril2txt
+# ARGS: lt
 #
-@main {
-  a: int = const 4;
-  b: int = const 2;
-
+@main(a: int, b: int) {
   # (a + b) * (a + b)
   sum1: int = add a b;
   sum2: int = add a b;
