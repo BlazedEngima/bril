@@ -1,7 +1,7 @@
 use crate::types::{
     BasicBlock, ConstantKey, ConstantValue, Expression, LVNTable, ProgramCFG, ValueNumber,
 };
-use bril_rs::{ConstOps, Instruction, Literal, Type, ValueOps};
+use bril_rs::{ConstOps, Instruction, Literal, Position, Type, ValueOps};
 
 pub struct LocalValueNumbering;
 
@@ -13,6 +13,7 @@ impl LocalValueNumbering {
         )
     }
 
+    // Sort commutative operation arguments
     fn canonicalize_args(op: &ValueOps, args: &mut [ValueNumber]) {
         if Self::is_commutative(op) {
             args.sort_unstable();
@@ -154,12 +155,34 @@ impl LocalValueNumbering {
             }
 
             // TODO: Add support for float operations and pointer operations
-
-            // Unsupported operation or incorrect operand count.
             _ => return None,
         };
 
         Some(ConstantKey { ty, value })
+    }
+
+    fn assign_var_to_new_vn(table: &mut LVNTable, dest: &str) -> ValueNumber {
+        let vn = table.fresh_value_number();
+        table.assign_vn_to_variable(dest.to_owned(), vn);
+        vn
+    }
+
+    fn create_const_instruction(
+        table: &mut LVNTable,
+        vn: u32,
+        constant_key: ConstantKey,
+        dest: &str,
+        pos: &Option<Position>,
+    ) -> Instruction {
+        table.assign_vn_to_variable(dest.to_owned(), vn);
+
+        Instruction::Constant {
+            dest: dest.to_owned(),
+            op: ConstOps::Const,
+            const_type: constant_key.ty.clone(),
+            value: Self::constant_to_literal(&constant_key.value),
+            pos: pos.clone(),
+        }
     }
 
     fn proccess_instruction(instr: &mut Instruction, table: &mut LVNTable) {
@@ -179,9 +202,7 @@ impl LocalValueNumbering {
                     Some(vn) => vn,
                     None => {
                         let vn = table.fresh_value_number();
-
                         table.insert_constant(key, vn);
-
                         vn
                     }
                 };
@@ -199,29 +220,20 @@ impl LocalValueNumbering {
                 op_type,
                 pos,
             } => {
-                let arg_vns: Vec<ValueNumber> = args
+                let mut arg_vns: Vec<ValueNumber> = args
                     .iter()
                     .map(|arg| table.get_or_create_vn_from_variable(arg))
                     .collect();
 
                 // Special handling for id: Replace with Const
                 if *op == ValueOps::Id {
+                    // Id instruction only has one argument
                     let source_vn = arg_vns[0];
 
                     // Propagate constants when the source is known to be constant.
                     if let Some(constant) = table.get_constant_from_vn(&source_vn).cloned() {
-                        let literal = Self::constant_to_literal(&constant.value);
-
-                        table.assign_vn_to_variable(dest.clone(), source_vn);
-
-                        *instr = Instruction::Constant {
-                            dest: dest.clone(),
-                            op: ConstOps::Const,
-                            const_type: constant.ty,
-                            value: literal,
-                            pos: pos.clone(),
-                        };
-
+                        *instr =
+                            Self::create_const_instruction(table, source_vn, constant, dest, pos);
                         return;
                     }
 
@@ -230,12 +242,12 @@ impl LocalValueNumbering {
                 }
 
                 if !Self::is_lvn_eligible(op) {
-                    let vn = table.fresh_value_number();
-                    table.assign_vn_to_variable(dest.clone(), vn);
+                    Self::assign_var_to_new_vn(table, dest);
                     return;
                 }
 
-                // Try constant folding
+                // Constant folding
+                // Find constants of arguments if there is any
                 let operand_constants: Option<Vec<ConstantKey>> = arg_vns
                     .iter()
                     .map(|vn| table.get_constant_from_vn(vn).cloned())
@@ -245,36 +257,23 @@ impl LocalValueNumbering {
                     && let Some(folded_constant) = Self::fold_operation(op, &operand_constants)
                 {
                     let vn = table.get_or_create_vn_from_constant(folded_constant.clone());
-
-                    let replacement = Instruction::Constant {
-                        dest: dest.clone(),
-                        op: ConstOps::Const,
-                        const_type: folded_constant.ty.clone(),
-                        value: Self::constant_to_literal(&folded_constant.value),
-                        pos: pos.clone(),
-                    };
-
-                    table.assign_vn_to_variable(dest.clone(), vn);
-
-                    *instr = replacement;
+                    *instr = Self::create_const_instruction(table, vn, folded_constant, dest, pos);
                     return;
                 }
 
-                let mut expression_arg_vns = arg_vns;
-
-                Self::canonicalize_args(op, &mut expression_arg_vns);
-
-                // Common Subexoression Elimination
+                // Common Subexpression Elimination
+                Self::canonicalize_args(op, &mut arg_vns);
                 let expression = Expression {
                     op: *op,
-                    args: expression_arg_vns,
+                    args: arg_vns,
                     op_type: op_type.clone(),
                 };
 
-                // Check whether this expression has already been evaluated.
+                // The expression may still exist in the expression table even if all
+                // variables holding its VN have since been reassigned.
                 if let Some(existing_vn) = table.get_vn_from_expression(&expression) {
-                    // Only replace the computation if another variable currently
-                    // holds the value. Expression entries can outlive their variables.
+                    // Only replace the computation with an Id if another variable still
+                    // holds the result. Exclude dest to avoid generating `dest = id dest` when reassigning.
                     if let Some(var) = table.get_variable_from_vn_except(existing_vn, dest) {
                         *op = ValueOps::Id;
 
@@ -288,10 +287,8 @@ impl LocalValueNumbering {
                     table.assign_vn_to_variable(dest.clone(), existing_vn);
                 } else {
                     // First occurrence of this expression.
-                    let vn = table.fresh_value_number();
-
+                    let vn = Self::assign_var_to_new_vn(table, dest);
                     table.insert_expression(expression, vn);
-                    table.assign_vn_to_variable(dest.clone(), vn);
                 }
             }
 

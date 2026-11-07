@@ -27,6 +27,7 @@ impl FromStr for Modules {
             match ch {
                 'c' => modules.c = true,
                 't' => modules.t = true,
+                'l' => modules.l = true,
                 unknown => return Err(format!("Unknown module code: '{unknown}'")),
             }
         }
@@ -79,7 +80,7 @@ fn main() -> Result<(), Whatever> {
         DeadCodeElimination::run(&mut cfg);
 
         let optimized_program: Program = cfg.into();
-        print!("{:?}", optimized_program);
+        print!("{}", optimized_program);
     }
 
     if opts.modules.t {
