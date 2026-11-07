@@ -67,28 +67,25 @@ fn main() -> Result<(), Whatever> {
     };
 
     let program = load_program_from_read(reader);
-    let cfg = construct_cfg(program);
+    let mut cfg = construct_cfg(program);
 
     // For testing purposes
     if opts.modules.c {
         print!("{:?}", cfg);
+        return Ok(());
     }
 
+    // Optimizations
     if opts.modules.l {
-        let mut cfg = cfg.clone();
         LocalValueNumbering::run(&mut cfg);
-        DeadCodeElimination::run(&mut cfg);
-
-        let optimized_program: Program = cfg.into();
-        print!("{}", optimized_program);
     }
 
     if opts.modules.t {
-        let mut cfg = cfg.clone();
         DeadCodeElimination::run(&mut cfg);
-        let tdce_program: Program = cfg.into();
-        print!("{}", tdce_program);
     }
+
+    let optimized_program: Program = cfg.into();
+    print!("{}", optimized_program);
 
     Ok(())
 }
