@@ -157,8 +157,6 @@ impl LocalValueNumbering {
                     .map(|vn| table.get_constant_from_vn(vn).cloned())
                     .collect();
 
-                println!("{:?}", operand_constants);
-
                 // Comparison folding and constant folding
                 let folded_constant = fold_self_comparison(op, &arg_vns)
                     .or_else(|| fold_arithmetic_operation(op, &operand_constants))
