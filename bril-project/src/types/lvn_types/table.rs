@@ -1,5 +1,6 @@
 use crate::types::lvn_types::{ConstantKey, Expression, ValueNumber};
-use ahash::{HashMap, HashSet};
+use ahash::HashMap;
+use indexmap::IndexSet;
 
 pub struct LVNTable {
     next_value_number: ValueNumber,
@@ -14,7 +15,7 @@ pub struct LVNTable {
     constant_numbers_map: HashMap<ConstantKey, ValueNumber>,
 
     // Value Number -> Variables currently holding that value
-    value_numbers_map: HashMap<ValueNumber, HashSet<String>>,
+    value_numbers_map: HashMap<ValueNumber, IndexSet<String>>,
 
     // Value Number -> Constant Key being represented by that number
     value_constants_map: HashMap<ValueNumber, ConstantKey>,
@@ -65,7 +66,7 @@ impl LVNTable {
             }
 
             if let Some(variables) = self.value_numbers_map.get_mut(&old_vn) {
-                variables.remove(&variable);
+                variables.shift_remove(&variable);
 
                 // Remove empty sets to avoid accumulating stale entries.
                 if variables.is_empty() {
@@ -88,7 +89,7 @@ impl LVNTable {
     pub fn get_variable_from_vn(&self, vn: ValueNumber) -> Option<&str> {
         self.value_numbers_map
             .get(&vn)
-            .and_then(|variables| variables.iter().next())
+            .and_then(|variables| variables.first())
             .map(String::as_str)
     }
 
