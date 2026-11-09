@@ -2,6 +2,7 @@ use crate::types::lvn_types::{ConstantKey, Expression, ValueNumber};
 use ahash::HashMap;
 use indexmap::IndexSet;
 
+#[derive(Debug)]
 pub struct LVNTable {
     next_value_number: ValueNumber,
 
@@ -22,6 +23,7 @@ pub struct LVNTable {
 }
 
 impl LVNTable {
+    #[must_use]
     pub fn new() -> Self {
         Self {
             next_value_number: 1,
@@ -33,14 +35,15 @@ impl LVNTable {
         }
     }
 
-    pub fn fresh_value_number(&mut self) -> ValueNumber {
+    pub const fn fresh_value_number(&mut self) -> ValueNumber {
         let vn = self.next_value_number;
         self.next_value_number += 1;
         vn
     }
 
     /// Returns the current value number of a variable.
-    pub fn get_vn_from_variable(&self, variable: &String) -> Option<ValueNumber> {
+    #[must_use]
+    pub fn get_vn_from_variable(&self, variable: &str) -> Option<ValueNumber> {
         self.variable_numbers_map.get(variable).copied()
     }
 
@@ -58,8 +61,9 @@ impl LVNTable {
     }
 
     /// Assigns a variable to a value number, updating the reverse mapping.
-    pub fn assign_vn_to_variable(&mut self, variable: String, vn: ValueNumber) {
+    pub fn assign_vn_to_variable(&mut self, variable: impl Into<String>, vn: ValueNumber) {
         // Remove the variable from its previous value number.
+        let variable = variable.into();
         if let Some(old_vn) = self.get_vn_from_variable(&variable) {
             if old_vn == vn {
                 return;
@@ -86,7 +90,8 @@ impl LVNTable {
     }
 
     /// Finds any variable currently holding the given value number.
-    pub fn get_variable_from_vn(&self, vn: ValueNumber) -> Option<&str> {
+    #[must_use]
+    pub fn get_repr_variable_from_vn(&self, vn: ValueNumber) -> Option<&str> {
         self.value_numbers_map
             .get(&vn)
             .and_then(|variables| variables.first())
@@ -94,6 +99,7 @@ impl LVNTable {
     }
 
     /// Finds a variable holding the given value number, excluding `excluded`.
+    #[must_use]
     pub fn get_variable_from_vn_except(&self, vn: ValueNumber, excluded: &str) -> Option<&str> {
         self.value_numbers_map
             .get(&vn)?
@@ -102,6 +108,7 @@ impl LVNTable {
             .map(String::as_str)
     }
 
+    #[must_use]
     pub fn get_vn_from_expression(&self, expression: &Expression) -> Option<ValueNumber> {
         self.expression_numbers_map.get(expression).copied()
     }
@@ -110,20 +117,23 @@ impl LVNTable {
         self.expression_numbers_map.insert(expression, vn);
     }
 
+    #[must_use]
     pub fn get_vn_from_constant(&self, constant: &ConstantKey) -> Option<ValueNumber> {
         self.constant_numbers_map.get(constant).copied()
     }
 
+    #[must_use]
     pub fn get_constant_from_vn(&self, vn: &ValueNumber) -> Option<&ConstantKey> {
         self.value_constants_map.get(vn)
     }
 
-    pub fn insert_constant(&mut self, constant: ConstantKey, vn: ValueNumber) {
+    fn insert_constant(&mut self, constant: ConstantKey, vn: ValueNumber) {
         self.constant_numbers_map.insert(constant.clone(), vn);
         self.value_constants_map.insert(vn, constant);
     }
 
     /// Returns an existing constant's value number, or creates one.
+    #[must_use]
     pub fn get_or_create_vn_from_constant(&mut self, constant: ConstantKey) -> ValueNumber {
         if let Some(&vn) = self.constant_numbers_map.get(&constant) {
             return vn;
@@ -131,17 +141,6 @@ impl LVNTable {
 
         let vn = self.fresh_value_number();
         self.insert_constant(constant, vn);
-        vn
-    }
-
-    /// Returns an existing expression's value number, or creates one.
-    pub fn get_or_create_expression_number(&mut self, expression: Expression) -> ValueNumber {
-        if let Some(&vn) = self.expression_numbers_map.get(&expression) {
-            return vn;
-        }
-
-        let vn = self.fresh_value_number();
-        self.insert_expression(expression, vn);
         vn
     }
 }
