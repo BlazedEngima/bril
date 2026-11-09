@@ -22,7 +22,7 @@ impl FromStr for Modules {
     type Err = String;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        let mut modules = Modules::default();
+        let mut modules = Self::default();
         for ch in s.chars() {
             match ch {
                 'c' => modules.c = true,
@@ -58,7 +58,7 @@ fn main() -> Result<(), Whatever> {
                 input_path_string.clone(),
                 Box::new(
                     fs::File::open(&input_path)
-                        .whatever_context(format!("Failed to open file: {}", input_path_string))?,
+                        .whatever_context(format!("Failed to open file: {input_path_string}"))?,
                 ),
             )
         } else {
@@ -71,7 +71,7 @@ fn main() -> Result<(), Whatever> {
 
     // For testing purposes
     if opts.modules.c {
-        print!("{:?}", cfg);
+        print!("{cfg:?}");
         return Ok(());
     }
 
@@ -85,7 +85,7 @@ fn main() -> Result<(), Whatever> {
     }
 
     let optimized_program: Program = cfg.into();
-    print!("{}", optimized_program);
+    print!("{optimized_program}");
 
     Ok(())
 }
