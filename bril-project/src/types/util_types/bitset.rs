@@ -4,6 +4,7 @@ pub struct BitSet {
 }
 
 impl BitSet {
+    #[must_use]
     pub fn new_all_true(size: usize) -> Self {
         let num_words = (size + 63).div_ceil(64);
         Self {
@@ -11,6 +12,7 @@ impl BitSet {
         }
     }
 
+    #[must_use]
     pub fn new_all_false(size: usize) -> Self {
         let num_words = (size + 63).div_ceil(64);
         Self {
@@ -29,6 +31,7 @@ impl BitSet {
     }
 
     /// Read whether index is `true` (keep)
+    #[must_use]
     pub fn is_keep(&self, idx: usize) -> bool {
         (self.words[idx / 64] & (1u64 << (idx % 64))) != 0
     }

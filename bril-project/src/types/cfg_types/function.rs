@@ -15,6 +15,7 @@ pub struct FunctionCFG {
 }
 
 impl FunctionCFG {
+    #[must_use]
     pub fn new(
         name: String,
         args: Vec<Argument>,
@@ -39,18 +40,22 @@ impl FunctionCFG {
         self.blocks.push(block);
     }
 
+    #[must_use]
     pub fn has_id(&self, id: &BlockId) -> bool {
         self.block_id_to_label.contains_key(id)
     }
 
-    pub fn len(&self) -> usize {
+    #[must_use]
+    pub const fn len(&self) -> usize {
         self.blocks.len()
     }
 
-    pub fn is_empty(&self) -> bool {
+    #[must_use]
+    pub const fn is_empty(&self) -> bool {
         self.blocks.is_empty()
     }
 
+    #[must_use]
     pub fn get_blocks(&self) -> &[BasicBlock] {
         &self.blocks
     }
@@ -108,10 +113,10 @@ impl Debug for FunctionCFG {
     fn fmt(&self, f: &mut Formatter<'_>) -> Result {
         for (id, block) in self.blocks.iter().enumerate() {
             match self.block_id_to_label.get(&id) {
-                Some(label) => writeln!(f, "BB{} ({}):", id, label)?,
-                None => writeln!(f, "BB{}:", id)?,
+                Some(label) => writeln!(f, "BB{id} ({label}):")?,
+                None => writeln!(f, "BB{id}:")?,
             }
-            writeln!(f, "{}", block)?;
+            writeln!(f, "{block}")?;
         }
         Ok(())
     }
@@ -127,13 +132,13 @@ impl Display for FunctionCFG {
         // nodes
         for (id, block) in self.blocks.iter().enumerate() {
             if let Some(label) = self.block_id_to_label.get(&id) {
-                write!(f, "    {} [label=\"", label)?;
+                write!(f, "    {label} [label=\"")?;
             } else {
-                write!(f, "    BB{} [label=\"", id)?;
+                write!(f, "    BB{id} [label=\"")?;
             }
 
             for instr in block.get_instrs() {
-                write!(f, "{}\\l", instr)?;
+                write!(f, "{instr}\\l")?;
             }
 
             writeln!(f, "\"];")?;
@@ -144,16 +149,16 @@ impl Display for FunctionCFG {
             for succ in block.get_successors() {
                 // Print the current block
                 if let Some(label) = self.block_id_to_label.get(&id) {
-                    write!(f, "    {} -> ", label)?;
+                    write!(f, "    {label} -> ")?;
                 } else {
-                    write!(f, "    BB{} -> ", id)?;
+                    write!(f, "    BB{id} -> ")?;
                 }
 
                 // Print the successors
                 if let Some(label) = self.block_id_to_label.get(succ) {
-                    writeln!(f, "{};", label)?;
+                    writeln!(f, "{label};")?;
                 } else {
-                    writeln!(f, "BB{};", succ)?;
+                    writeln!(f, "BB{succ};")?;
                 }
             }
         }
@@ -184,7 +189,7 @@ impl From<FunctionCFG> for Function {
         }
 
         // Reconstruct the library's Function struct
-        Function {
+        Self {
             args: cfg.args,
             instrs,
             name: cfg.name,
