@@ -1,8 +1,8 @@
 use bril_rs::Instruction;
 
 use crate::{
-    dfa::reaching::domain::ReachingDefinitions,
-    types::{BasicBlock, DataFlowAnalysis, DataFlowSet, Definition, Direction},
+    dfa::reaching::{definition::Definition, domain::ReachingDefinitions},
+    types::{BasicBlock, DataFlowAnalysis, DataFlowSet, Direction},
 };
 
 #[derive(Default, Debug)]
