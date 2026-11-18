@@ -13,6 +13,7 @@ impl ProgramCFG {
         self.functions.push(function_cfg);
     }
 
+    #[must_use]
     pub fn get_functions(&self) -> &[FunctionCFG] {
         &self.functions
     }
@@ -25,8 +26,8 @@ impl ProgramCFG {
 /// Full debugging information of Program
 impl Debug for ProgramCFG {
     fn fmt(&self, f: &mut Formatter<'_>) -> Result {
-        for func in self.functions.iter() {
-            writeln!(f, "{:?}", func)?;
+        for func in &self.functions {
+            writeln!(f, "{func:?}")?;
         }
         Ok(())
     }
@@ -34,8 +35,8 @@ impl Debug for ProgramCFG {
 
 impl Display for ProgramCFG {
     fn fmt(&self, f: &mut Formatter<'_>) -> Result {
-        for func in self.functions.iter() {
-            writeln!(f, "{}", func)?;
+        for func in &self.functions {
+            writeln!(f, "{func}")?;
         }
 
         Ok(())
@@ -44,8 +45,8 @@ impl Display for ProgramCFG {
 
 impl From<ProgramCFG> for Program {
     fn from(cfg: ProgramCFG) -> Self {
-        Program {
-            functions: cfg.functions.into_iter().map(|f| f.into()).collect(),
+        Self {
+            functions: cfg.functions.into_iter().map(Into::into).collect(),
         }
     }
 }

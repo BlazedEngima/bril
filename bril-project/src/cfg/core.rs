@@ -16,7 +16,7 @@ fn close_block(
     // When encountering a named label, this will be skipped
     // as it will insert the block metadata right away
     if !function_cfg.has_id(id_counter) {
-        let label_name = format!("BB{}", id_counter);
+        let label_name = format!("BB{id_counter}");
         label_to_block_id.insert(label_name, *id_counter);
     }
 
@@ -103,6 +103,7 @@ fn insert_code_blocks(
     close_block(function_cfg, &mut block, &mut id_counter, label_to_block_id);
 }
 
+#[must_use]
 pub fn construct_cfg(program: Program) -> ProgramCFG {
     let mut program_cfg = ProgramCFG::default();
     let mut label_to_block_id = HashMap::default();

@@ -15,7 +15,8 @@ pub struct BasicBlock {
 }
 
 impl BasicBlock {
-    pub fn new(id: usize) -> Self {
+    #[must_use]
+    pub const fn new(id: usize) -> Self {
         Self {
             id,
             instrs: Vec::new(),
@@ -23,15 +24,18 @@ impl BasicBlock {
         }
     }
 
-    pub fn get_id(&self) -> BlockId {
+    #[must_use]
+    pub const fn get_id(&self) -> BlockId {
         self.id
     }
 
-    pub fn is_empty(&self) -> bool {
+    #[must_use]
+    pub const fn is_empty(&self) -> bool {
         self.instrs.is_empty()
     }
 
-    pub fn has_successors(&self) -> bool {
+    #[must_use]
+    pub const fn has_successors(&self) -> bool {
         !self.successors.is_empty()
     }
 
@@ -41,7 +45,7 @@ impl BasicBlock {
         self.id = 0;
     }
 
-    pub fn set_id(&mut self, id: usize) {
+    pub const fn set_id(&mut self, id: usize) {
         self.id = id;
     }
 
@@ -49,6 +53,7 @@ impl BasicBlock {
         self.instrs.push(instr);
     }
 
+    #[must_use]
     pub fn get_instrs(&self) -> &[Instruction] {
         &self.instrs
     }
@@ -57,10 +62,12 @@ impl BasicBlock {
         &mut self.instrs
     }
 
+    #[must_use]
     pub fn into_instrs(self) -> Vec<Instruction> {
         self.instrs
     }
 
+    #[must_use]
     pub fn get_successors(&self) -> &[BlockId] {
         &self.successors
     }
@@ -75,10 +82,10 @@ impl BasicBlock {
 
     pub fn eliminate_dead_code(&mut self, live_vars: &mut HashSet<String>) {
         let mask = self.find_unused_defs(live_vars);
-        self.delete_instructions(mask);
+        self.delete_instructions(&mask);
     }
 
-    fn delete_instructions(&mut self, mask: BitSet) {
+    fn delete_instructions(&mut self, mask: &BitSet) {
         let mut idx = 0;
         self.instrs.retain(|_| {
             let keep = mask.is_keep(idx);
@@ -132,7 +139,7 @@ impl Display for BasicBlock {
         writeln!(f, "  instructions:")?;
 
         for instr in &self.instrs {
-            writeln!(f, "    {}", instr)?;
+            writeln!(f, "    {instr}")?;
         }
 
         writeln!(f)?;
@@ -141,10 +148,10 @@ impl Display for BasicBlock {
         let mut first = true;
         for id in &self.successors {
             if first {
-                write!(f, "{}", id)?;
+                write!(f, "{id}")?;
                 first = false;
             } else {
-                write!(f, ", {}", id)?;
+                write!(f, ", {id}")?;
             }
         }
         writeln!(f, "]")?;
