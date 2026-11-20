@@ -87,7 +87,7 @@ fn insert_code_blocks(
             }
             // If block hits label, then push previous block into function and set name of new one
             Code::Label { label, pos } => {
-                // Cloase current block
+                // Close current block
                 close_block(function_cfg, &mut block, &mut id_counter, label_to_block_id);
 
                 // Insert new block metadata into FunctionCFG
