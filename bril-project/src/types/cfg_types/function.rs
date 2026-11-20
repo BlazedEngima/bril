@@ -46,6 +46,16 @@ impl FunctionCFG {
     }
 
     #[must_use]
+    pub const fn get_label_map(&self) -> &HashMap<BlockId, Label> {
+        &self.block_id_to_label
+    }
+
+    #[must_use]
+    pub fn get_label(&self, id: BlockId) -> Option<&Label> {
+        self.block_id_to_label.get(&id)
+    }
+
+    #[must_use]
     pub fn has_id(&self, id: &BlockId) -> bool {
         self.block_id_to_label.contains_key(id)
     }
@@ -81,7 +91,7 @@ impl FunctionCFG {
 
     fn compute_predecessors(&mut self) {
         // Clear previous predecessors
-        for block in self.blocks.iter_mut() {
+        for block in &mut self.blocks {
             block.clear_predecessor();
         }
 
