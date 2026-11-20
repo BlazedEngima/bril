@@ -1,9 +1,9 @@
-mod dfa_traits;
 mod direction;
 mod result;
 mod set;
+mod traits;
 
-pub use dfa_traits::{DataFlowAnalysisTrait, DataFlowDomain, DataFlowElement};
 pub use direction::Direction;
 pub use result::DataFlowResult;
 pub use set::DataFlowSet;
+pub use traits::{DataFlowAnalysisTrait, DataFlowDomain, DataFlowElement};
