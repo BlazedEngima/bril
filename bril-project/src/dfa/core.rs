@@ -1,6 +1,6 @@
-use std::collections::{VecDeque, hash_map::Entry};
+use std::collections::VecDeque;
 
-use ahash::{HashMap, HashSet};
+use ahash::HashSet;
 
 use crate::types::{
     BasicBlock, BlockId, DataFlowAnalysisTrait, DataFlowDomain, DataFlowResult, FunctionCFG,
@@ -28,14 +28,14 @@ impl DataFlowAnalysis {
         analysis: &T,
     ) -> DataFlowResult<T::Domain> {
         let mut result = DataFlowResult {
-            in_facts: HashMap::default(),
-            out_facts: HashMap::default(),
+            in_facts: Vec::default(),
+            out_facts: Vec::default(),
         };
 
         let mut worklist = VecDeque::new();
         let mut queued = HashSet::default();
 
-        Self::init(func, &mut worklist, &mut queued);
+        Self::init(func, analysis, &mut result, &mut worklist, &mut queued);
 
         while let Some(block_id) = worklist.pop_front() {
             queued.remove(&block_id);
@@ -49,9 +49,11 @@ impl DataFlowAnalysis {
 
             // Calculate OUT[B].
             let output = analysis.transfer(block, &input);
+            let output_changed = result.out_facts[block_id] != output;
 
-            result.in_facts.insert(block_id, input);
-            if Self::update_output_and_check_changed(&mut result, block_id, output) {
+            result.in_facts[block_id] = input;
+            result.out_facts[block_id] = output;
+            if output_changed {
                 for &successor in block.get_successors() {
                     if queued.insert(successor) {
                         worklist.push_back(successor);
@@ -63,8 +65,19 @@ impl DataFlowAnalysis {
     }
 
     /// Initialize the in and out artifacts for the results and the worklist
-    fn init(func: &FunctionCFG, worklist: &mut VecDeque<BlockId>, queued: &mut HashSet<BlockId>) {
+    fn init<T: DataFlowAnalysisTrait>(
+        func: &FunctionCFG,
+        analysis: &T,
+        result: &mut DataFlowResult<T::Domain>,
+        worklist: &mut VecDeque<BlockId>,
+        queued: &mut HashSet<BlockId>,
+    ) {
         for block in func.get_blocks() {
+            let init = analysis.init();
+
+            result.in_facts.push(init.clone());
+            result.out_facts.push(init);
+
             worklist.push_back(block.get_id());
             queued.insert(block.get_id());
         }
@@ -79,35 +92,12 @@ impl DataFlowAnalysis {
     ) -> T::Domain {
         let mut input = analysis.init();
 
-        for predecessor in block.get_predecessors() {
+        for &predecessor in block.get_predecessors() {
             if let Some(output) = result.out_facts.get(predecessor) {
                 input.merge(output);
             }
         }
 
         input
-    }
-
-    /// Updates output and returns boolean if output has changed or not
-    fn update_output_and_check_changed<D: DataFlowDomain>(
-        result: &mut DataFlowResult<D>,
-        block_id: BlockId,
-        output: D,
-    ) -> bool {
-        match result.out_facts.entry(block_id) {
-            Entry::Occupied(mut entry) => {
-                if entry.get() == &output {
-                    false
-                } else {
-                    entry.insert(output);
-                    true
-                }
-            }
-
-            Entry::Vacant(entry) => {
-                entry.insert(output);
-                true
-            }
-        }
     }
 }
