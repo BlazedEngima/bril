@@ -5,7 +5,7 @@ use crate::{
     types::{BasicBlock, DataFlowAnalysisTrait, DataFlowSet, Direction},
 };
 
-#[derive(Default, Debug)]
+#[derive(Default, Debug, Copy, Clone)]
 pub struct ReachingDefinitionsAnalysis;
 
 impl ReachingDefinitionsAnalysis {
