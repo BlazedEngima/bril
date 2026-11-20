@@ -2,7 +2,7 @@ use bril_rs::Instruction;
 
 use crate::{
     dfa::reaching::{definition::Definition, domain::ReachingDefinitions},
-    types::{BasicBlock, DataFlowAnalysis, DataFlowSet, Direction},
+    types::{BasicBlock, DataFlowAnalysisTrait, DataFlowSet, Direction},
 };
 
 #[derive(Default, Debug)]
@@ -24,7 +24,7 @@ impl ReachingDefinitionsAnalysis {
     }
 }
 
-impl DataFlowAnalysis for ReachingDefinitionsAnalysis {
+impl DataFlowAnalysisTrait for ReachingDefinitionsAnalysis {
     type Domain = ReachingDefinitions;
 
     fn init(&self) -> Self::Domain {

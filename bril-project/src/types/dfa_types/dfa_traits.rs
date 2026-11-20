@@ -11,7 +11,7 @@ pub trait DataFlowDomain: Clone + PartialEq + Display + Debug {
     fn merge(&mut self, other: &Self);
 }
 
-pub trait DataFlowAnalysis {
+pub trait DataFlowAnalysisTrait {
     type Domain: DataFlowDomain;
 
     fn init(&self) -> Self::Domain;

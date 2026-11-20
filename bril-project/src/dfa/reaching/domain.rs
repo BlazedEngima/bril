@@ -1,4 +1,7 @@
-use crate::types::{DataFlowDomain, DataFlowSet, Definition};
+use crate::{
+    dfa::reaching::definition::Definition,
+    types::{DataFlowDomain, DataFlowSet},
+};
 
 pub type ReachingDefinitions = DataFlowSet<Definition>;
 
