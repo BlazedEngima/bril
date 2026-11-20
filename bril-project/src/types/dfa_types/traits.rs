@@ -5,9 +5,9 @@ use std::{
 
 use crate::types::{BasicBlock, dfa_types::Direction};
 
-pub trait DataFlowElement: Hash + Eq + Display + Debug + Default {}
+pub trait DataFlowElement: Hash + Eq + PartialEq + Display + Debug + Default {}
 
-pub trait DataFlowDomain: Clone + PartialEq + Display + Debug {
+pub trait DataFlowDomain: PartialEq + Eq + Clone + PartialEq + Display + Debug {
     fn merge(&mut self, other: &Self);
 }
 
