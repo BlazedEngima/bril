@@ -2,6 +2,8 @@ use crate::types::{BasicBlock, BlockId, FunctionCFG, Label, ProgramCFG};
 use ahash::HashMap;
 use bril_rs::{Code, EffectOps, Instruction, Program};
 
+// TODO: wtf, make this shit better
+
 // If previous block has no name then assign some branch name
 fn close_block(
     function_cfg: &mut FunctionCFG,
@@ -70,6 +72,7 @@ fn insert_code_blocks(
     label_to_block_id: &mut HashMap<String, BlockId>,
 ) {
     let mut block = BasicBlock::default();
+    // TODO: Refactor this to use enumerate
     let mut id_counter = 0;
     for instr in code {
         match instr {
@@ -116,7 +119,7 @@ pub fn construct_cfg(program: Program) -> ProgramCFG {
         );
 
         insert_code_blocks(&mut function_cfg, function.instrs, &mut label_to_block_id);
-        function_cfg.build_sucessors(&label_to_block_id);
+        function_cfg.build_edges(&label_to_block_id);
 
         program_cfg.insert_function_cfg(function_cfg);
     }
