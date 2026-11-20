@@ -41,6 +41,11 @@ impl FunctionCFG {
     }
 
     #[must_use]
+    pub fn get_block(&self, id: BlockId) -> Option<&BasicBlock> {
+        self.blocks.get(id)
+    }
+
+    #[must_use]
     pub fn has_id(&self, id: &BlockId) -> bool {
         self.block_id_to_label.contains_key(id)
     }
@@ -64,15 +69,32 @@ impl FunctionCFG {
         &mut self.blocks
     }
 
-    pub fn build_sucessors(&mut self, label_to_block_id: &HashMap<String, BlockId>) {
+    pub fn build_edges(&mut self, label_to_block_id: &HashMap<String, BlockId>) {
         let num_blocks = self.blocks.len();
         for (idx, block) in self.blocks.iter_mut().enumerate() {
-            let successors = Self::compute_sucessors(idx, num_blocks, block, label_to_block_id);
+            let successors = Self::compute_successors(idx, num_blocks, block, label_to_block_id);
             block.set_successor(successors);
+        }
+
+        self.compute_predecessors();
+    }
+
+    fn compute_predecessors(&mut self) {
+        // Clear previous predecessors
+        for block in self.blocks.iter_mut() {
+            block.clear_predecessor();
+        }
+
+        for i in 0..self.blocks.len() {
+            let successors = self.blocks[i].get_successors().to_vec();
+
+            for successor in successors {
+                self.blocks[successor].insert_predecessor(i);
+            }
         }
     }
 
-    fn compute_sucessors(
+    fn compute_successors(
         idx: usize,
         num_blocks: usize,
         block: &BasicBlock,
@@ -89,7 +111,8 @@ impl FunctionCFG {
             // block or why theres a labels field in Instruction. Will leave it here for now
             // until I find enough reason to justify removing it.
             //
-            // EDIT: Removed Instruction::Value as it should never be a terminating instruction.
+            // EDIT: Removed Instruction::Value as it shouldn't be a terminating instruction for
+            // a basic block unless it's arbritarily the last instruction in the block.
             // Labels are any name associated with the instruction so a branch effect and assign value
             // instruction will both have labels.
             Instruction::Effect { labels, .. } => labels
@@ -100,7 +123,7 @@ impl FunctionCFG {
                         .expect("No label found in label to block id map")
                 })
                 .collect(),
-            // If the instruction is not the last instruction, add successor edge of the
+            // If the instruction is not the last instruction in the program, add successor edge of the
             // next instruction in the CFG
             _ if idx + 1 < num_blocks => vec![idx + 1],
             _ => vec![],

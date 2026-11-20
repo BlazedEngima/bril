@@ -9,9 +9,10 @@ pub type BlockId = usize; // Block Id to index blocks in Vector
 /// Struct representation of a Basic Block in the control flow graph
 #[derive(Default, Debug, Clone)]
 pub struct BasicBlock {
-    id: BlockId,              // Used for mapping for label to block id
-    instrs: Vec<Instruction>, // Vector of instructions within the basic block
-    successors: Vec<BlockId>, // Vector of successors (edges) to this basic block
+    id: BlockId,                // Used for mapping for label to block id
+    instrs: Vec<Instruction>,   // Vector of instructions within the basic block
+    successors: Vec<BlockId>,   // Vector of successors (edges) of this basic block
+    predecessors: Vec<BlockId>, // Vector of predecessors (edges) to this basic block
 }
 
 impl BasicBlock {
@@ -21,6 +22,7 @@ impl BasicBlock {
             id,
             instrs: Vec::new(),
             successors: Vec::new(),
+            predecessors: Vec::new(),
         }
     }
 
@@ -78,6 +80,23 @@ impl BasicBlock {
 
     pub fn set_successor(&mut self, successors: Vec<BlockId>) {
         self.successors = successors;
+    }
+
+    #[must_use]
+    pub fn get_predecessors(&self) -> &[BlockId] {
+        &self.predecessors
+    }
+
+    pub fn insert_predecessor(&mut self, predecessor: BlockId) {
+        self.predecessors.push(predecessor);
+    }
+
+    pub fn set_predecessor(&mut self, predecessor: Vec<BlockId>) {
+        self.predecessors = predecessor;
+    }
+
+    pub fn clear_predecessor(&mut self) {
+        self.predecessors.clear();
     }
 
     pub fn eliminate_dead_code(&mut self, live_vars: &mut HashSet<String>) {
