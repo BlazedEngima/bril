@@ -2,38 +2,14 @@ use std::{
     fs,
     io::{Read, stdin},
     path::PathBuf,
-    str::FromStr,
 };
 
 use argh::FromArgs;
-use bril_compiler::{cfg::construct_cfg, lvn::LocalValueNumbering, tdce::DeadCodeElimination};
+use bril_compiler::{
+    cfg::construct_cfg, lvn::LocalValueNumbering, parser::Modules, tdce::DeadCodeElimination,
+};
 use bril_rs::{Program, load_program_from_read};
 use snafu::{ResultExt, Whatever};
-
-#[derive(Debug, Default)]
-struct Modules {
-    pub c: bool,
-    pub t: bool,
-    pub l: bool,
-}
-
-// Convert a string like "ctdegd" into active flags
-impl FromStr for Modules {
-    type Err = String;
-
-    fn from_str(s: &str) -> Result<Self, Self::Err> {
-        let mut modules = Self::default();
-        for ch in s.chars() {
-            match ch {
-                'c' => modules.c = true,
-                't' => modules.t = true,
-                'l' => modules.l = true,
-                unknown => return Err(format!("Unknown module code: '{unknown}'")),
-            }
-        }
-        Ok(modules)
-    }
-}
 
 #[derive(FromArgs)]
 /// Generates a CFG from Bril's canonical JSON representation
@@ -42,6 +18,7 @@ struct Opts {
     /// input Bril file: omit for stdin
     #[argh(positional)]
     input_path: Option<PathBuf>,
+
     /// active module letters, e.g., -m ct
     #[argh(option, short = 'm', default = "Modules::default()")]
     modules: Modules,
@@ -70,18 +47,26 @@ fn main() -> Result<(), Whatever> {
     let mut cfg = construct_cfg(program);
 
     // For testing purposes
-    if opts.modules.c {
+    if opts.modules.dump_cfg {
         print!("{cfg:?}");
         return Ok(());
     }
 
     // Optimizations
-    if opts.modules.l {
+    // Local Value Numbering
+    if opts.modules.lvn {
         LocalValueNumbering::run(&mut cfg);
     }
 
-    if opts.modules.t {
+    // Total Dead Code Elimination
+    if opts.modules.tdce {
         DeadCodeElimination::run(&mut cfg);
+    }
+
+    // Dataflow analysis
+    if let Some(analysis) = opts.modules.dfa {
+        analysis.run(&cfg);
+        return Ok(());
     }
 
     let optimized_program: Program = cfg.into();
