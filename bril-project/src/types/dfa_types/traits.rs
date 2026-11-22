@@ -7,11 +7,11 @@ use crate::types::{BasicBlock, dfa_types::Direction};
 
 pub trait DataFlowElement: Hash + Eq + PartialEq + Display + Debug + Default {}
 
-pub trait DataFlowDomain: PartialEq + Eq + Clone + PartialEq + Display + Debug {
+pub trait DataFlowDomain: Eq + Clone + PartialEq + Display + Debug {
     fn merge(&mut self, other: &Self);
 }
 
-pub trait DataFlowAnalysisTrait: Clone + Copy {
+pub trait DataFlowAnalysisTrait: Debug + Clone + Copy {
     type Domain: DataFlowDomain;
 
     fn init(&self) -> Self::Domain;
