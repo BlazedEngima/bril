@@ -1,13 +1,16 @@
 use std::str::FromStr;
 
-use crate::dfa::{DFAAnalysis, reaching::analysis::ReachingDefinitionsAnalysis};
+use crate::dfa::{
+    DFAPass, defined::analysis::DefinedVariablesAnalysis,
+    reaching::analysis::ReachingDefinitionsAnalysis,
+};
 
 #[derive(Debug, Default)]
 pub struct Modules {
     pub dump_cfg: bool,
     pub tdce: bool,
     pub lvn: bool,
-    pub dfa: Option<DFAAnalysis>,
+    pub dfa: Option<DFAPass>,
 }
 
 // Convert module arguments into active flags.
@@ -46,9 +49,17 @@ impl FromStr for Modules {
                         return Err("Only one DFA analysis can be specified.".into());
                     }
 
-                    modules.dfa = Some(DFAAnalysis::ReachingDefinitions(
+                    modules.dfa = Some(DFAPass::ReachingDefinitions(
                         ReachingDefinitionsAnalysis::new(),
                     ));
+                }
+
+                "defined" | "dfa:defined" | "dfa:defined-variables" => {
+                    if modules.dfa.is_some() {
+                        return Err("Only one DFA analysis can be specified.".into());
+                    }
+
+                    modules.dfa = Some(DFAPass::DefinedVariables(DefinedVariablesAnalysis::new()));
                 }
 
                 unknown => {

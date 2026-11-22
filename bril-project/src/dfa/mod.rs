@@ -1,35 +1,30 @@
 pub mod core;
+pub mod defined;
 pub mod reaching;
-
-use std::fmt::Display;
 
 use reaching::analysis::ReachingDefinitionsAnalysis;
 
 use crate::{
-    dfa::core::DataFlowAnalysis,
-    types::{DataFlowResult, ProgramCFG},
+    dfa::{core::DataFlowAnalysis, defined::analysis::DefinedVariablesAnalysis},
+    types::{DataFlowAnalysisTrait, ProgramCFG},
 };
 
 #[derive(Debug, Clone)]
-pub enum DFAAnalysis {
+pub enum DFAPass {
     ReachingDefinitions(ReachingDefinitionsAnalysis),
+    DefinedVariables(DefinedVariablesAnalysis),
 }
 
-impl DFAAnalysis {
+impl DFAPass {
     pub fn run(&self, cfg: &ProgramCFG) {
         match self {
-            Self::ReachingDefinitions(analysis) => {
-                let results = DataFlowAnalysis::run(cfg, analysis);
-
-                Self::print(cfg, &results);
-            }
+            Self::ReachingDefinitions(analysis) => Self::execute(cfg, analysis),
+            Self::DefinedVariables(analysis) => Self::execute(cfg, analysis),
         }
     }
 
-    fn print<D: Display>(cfg: &ProgramCFG, dfa_result: &[DataFlowResult<D>]) {
-        for (idx, item) in dfa_result.iter().enumerate() {
-            let func_cfg = &cfg.get_functions()[idx];
-            item.print_with_header_names(func_cfg);
-        }
+    fn execute<T: DataFlowAnalysisTrait>(cfg: &ProgramCFG, analysis: &T) {
+        let results = DataFlowAnalysis::run(cfg, analysis);
+        DataFlowAnalysis::print(cfg, &results);
     }
 }
