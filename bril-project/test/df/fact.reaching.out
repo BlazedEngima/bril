@@ -1,0 +1,12 @@
+BB0:
+  in:  ∅
+  out: result, i
+header:
+  in:  result, i, zero, cond, result, one, i
+  out: result, i, result, one, i, zero, cond
+body:
+  in:  result, i, result, one, i, zero, cond
+  out: zero, cond, result, one, i
+end:
+  in:  result, i, result, one, i, zero, cond
+  out: result, i, result, one, i, zero, cond

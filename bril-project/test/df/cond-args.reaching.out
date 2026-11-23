@@ -1,0 +1,12 @@
+BB0:
+  in:  ∅
+  out: a, b
+left:
+  in:  a, b
+  out: a, b, c
+right:
+  in:  a, b
+  out: b, a, c
+end:
+  in:  a, b, c, b, a, c
+  out: a, b, c, b, a, c, d

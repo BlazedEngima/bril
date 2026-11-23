@@ -1,12 +1,12 @@
-b1:
+BB0:
   in:  ∅
   out: a, b, cond
 left:
   in:  a, b, cond
-  out: a, b, c, cond
+  out: a, b, cond, c
 right:
   in:  a, b, cond
-  out: a, b, c, cond
+  out: a, b, cond, c
 end:
-  in:  a, b, c, cond
-  out: a, b, c, cond, d
+  in:  a, b, cond, c
+  out: a, b, cond, c, d
