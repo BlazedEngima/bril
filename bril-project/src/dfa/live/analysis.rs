@@ -38,21 +38,21 @@ impl DataFlowAnalysisTrait<Forward> for LiveVariablesAnalysis {
         LiveVariables::default()
     }
 
-    fn transfer(&self, block: &BasicBlock, input: &Self::Domain) -> Self::Domain {
-        let mut output = input.clone();
+    fn transfer(&self, block: &BasicBlock, output: &Self::Domain) -> Self::Domain {
+        let mut input = output.clone();
 
         for instruction in block.get_instrs().iter().rev() {
             if let Some(variable) = Self::get_var_definition(instruction) {
-                output.variables.swap_remove(variable);
+                input.variables.swap_remove(variable);
             }
 
             for variable in Self::get_var_arguments(instruction) {
-                output.variables.insert(Variable {
+                input.variables.insert(Variable {
                     variable: variable.to_owned(),
                 });
             }
         }
 
-        output
+        input
     }
 }
