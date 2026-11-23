@@ -1,8 +1,8 @@
 use bril_rs::Instruction;
 
 use crate::{
-    dfa::reaching::{definition::Definition, domain::ReachingDefinitions},
-    types::{BasicBlock, DataFlowAnalysisTrait, DataFlowSet, Forward},
+    dfa::reaching::domain::ReachingDefinitions,
+    types::{BasicBlock, DataFlowAnalysisTrait, Forward, elements::Definition},
 };
 
 #[derive(Default, Debug, Copy, Clone)]
@@ -28,7 +28,7 @@ impl DataFlowAnalysisTrait<Forward> for ReachingDefinitionsAnalysis {
     type Domain = ReachingDefinitions;
 
     fn init(&self) -> Self::Domain {
-        DataFlowSet::default()
+        ReachingDefinitions::default()
     }
 
     fn transfer(&self, block: &BasicBlock, input: &Self::Domain) -> Self::Domain {
@@ -40,9 +40,9 @@ impl DataFlowAnalysisTrait<Forward> for ReachingDefinitionsAnalysis {
             };
 
             // Kill all previous definitions of this variable.
-            output.retain(|def| def.variable != variable);
+            output.definitions.retain(|def| def.variable != variable);
 
-            output.insert(Definition {
+            output.definitions.insert(Definition {
                 variable: variable.to_string(),
                 block_id: block.get_id(),
                 instruction_index: index,

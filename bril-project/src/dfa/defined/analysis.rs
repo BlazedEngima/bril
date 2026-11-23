@@ -1,8 +1,8 @@
 use bril_rs::Instruction;
 
 use crate::{
-    dfa::defined::{domain::DefinedVariables, variable::Variable},
-    types::{BasicBlock, DataFlowAnalysisTrait, DataFlowSet, Forward},
+    dfa::defined::domain::DefinedVariables,
+    types::{BasicBlock, DataFlowAnalysisTrait, Forward, elements::Variable},
 };
 
 #[derive(Default, Debug, Copy, Clone)]
@@ -28,7 +28,7 @@ impl DataFlowAnalysisTrait<Forward> for DefinedVariablesAnalysis {
     type Domain = DefinedVariables;
 
     fn init(&self) -> Self::Domain {
-        DataFlowSet::default()
+        DefinedVariables::default()
     }
 
     fn transfer(&self, block: &BasicBlock, input: &Self::Domain) -> Self::Domain {
@@ -36,7 +36,7 @@ impl DataFlowAnalysisTrait<Forward> for DefinedVariablesAnalysis {
 
         for instruction in block.get_instrs() {
             if let Some(variable) = Self::get_variable(instruction) {
-                output.insert(Variable {
+                output.variables.insert(Variable {
                     variable: variable.to_string(),
                 });
             }
