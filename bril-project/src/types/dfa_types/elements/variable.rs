@@ -1,4 +1,7 @@
-use std::fmt::{Debug, Display, Formatter, Result};
+use std::{
+    borrow::Borrow,
+    fmt::{Debug, Display, Formatter, Result},
+};
 
 use crate::types::DataFlowElement;
 
@@ -8,6 +11,12 @@ pub struct Variable {
 }
 
 impl DataFlowElement for Variable {}
+
+impl Borrow<str> for Variable {
+    fn borrow(&self) -> &str {
+        &self.variable
+    }
+}
 
 impl Display for Variable {
     fn fmt(&self, f: &mut Formatter<'_>) -> Result {

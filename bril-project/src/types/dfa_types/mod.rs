@@ -1,4 +1,5 @@
 mod direction;
+pub mod elements;
 mod result;
 mod set;
 mod traits;
