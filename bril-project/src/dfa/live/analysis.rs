@@ -2,7 +2,7 @@ use bril_rs::Instruction;
 
 use crate::{
     dfa::live::domain::LiveVariables,
-    types::{BasicBlock, DataFlowAnalysisTrait, Forward, elements::Variable},
+    types::{Backward, BasicBlock, DataFlowAnalysisTrait, elements::Variable},
 };
 
 #[derive(Default, Debug, Copy, Clone)]
@@ -31,7 +31,7 @@ impl LiveVariablesAnalysis {
     }
 }
 
-impl DataFlowAnalysisTrait<Forward> for LiveVariablesAnalysis {
+impl DataFlowAnalysisTrait<Backward> for LiveVariablesAnalysis {
     type Domain = LiveVariables;
 
     fn init(&self) -> Self::Domain {
