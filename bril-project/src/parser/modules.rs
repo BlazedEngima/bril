@@ -1,7 +1,7 @@
 use std::str::FromStr;
 
 use crate::dfa::{
-    DFAPass, defined::analysis::DefinedVariablesAnalysis,
+    DFAPass, defined::analysis::DefinedVariablesAnalysis, live::analysis::LiveVariablesAnalysis,
     reaching::analysis::ReachingDefinitionsAnalysis,
 };
 
@@ -60,6 +60,14 @@ impl FromStr for Modules {
                     }
 
                     modules.dfa = Some(DFAPass::DefinedVariables(DefinedVariablesAnalysis::new()));
+                }
+
+                "live" | "dfa:live" | "dfa:live-variables" => {
+                    if modules.dfa.is_some() {
+                        return Err("Only one DFA analysis can be specified.".into());
+                    }
+
+                    modules.dfa = Some(DFAPass::LiveVariables(LiveVariablesAnalysis::new()));
                 }
 
                 unknown => {

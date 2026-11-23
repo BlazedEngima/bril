@@ -1,18 +1,21 @@
 pub mod core;
 pub mod defined;
+pub mod live;
 pub mod reaching;
 
-use reaching::analysis::ReachingDefinitionsAnalysis;
-
 use crate::{
-    dfa::{core::DataFlowAnalysis, defined::analysis::DefinedVariablesAnalysis},
-    types::{DataFlowAnalysisTrait, ProgramCFG},
+    dfa::{
+        core::DataFlowAnalysis, defined::analysis::DefinedVariablesAnalysis,
+        live::analysis::LiveVariablesAnalysis, reaching::analysis::ReachingDefinitionsAnalysis,
+    },
+    types::{DataFlowAnalysisTrait, DataFlowDirection, ProgramCFG},
 };
 
 #[derive(Debug, Clone)]
 pub enum DFAPass {
     ReachingDefinitions(ReachingDefinitionsAnalysis),
     DefinedVariables(DefinedVariablesAnalysis),
+    LiveVariables(LiveVariablesAnalysis),
 }
 
 impl DFAPass {
@@ -20,10 +23,15 @@ impl DFAPass {
         match self {
             Self::ReachingDefinitions(analysis) => Self::execute(cfg, analysis),
             Self::DefinedVariables(analysis) => Self::execute(cfg, analysis),
+            Self::LiveVariables(analysis) => Self::execute(cfg, analysis),
         }
     }
 
-    fn execute<T: DataFlowAnalysisTrait>(cfg: &ProgramCFG, analysis: &T) {
+    fn execute<T, D>(cfg: &ProgramCFG, analysis: &T)
+    where
+        D: DataFlowDirection,
+        T: DataFlowAnalysisTrait<D>,
+    {
         let results = DataFlowAnalysis::run(cfg, analysis);
         DataFlowAnalysis::print(cfg, &results);
     }
