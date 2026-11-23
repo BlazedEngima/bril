@@ -3,17 +3,18 @@ use std::{collections::VecDeque, fmt::Display};
 use ahash::HashSet;
 
 use crate::types::{
-    BasicBlock, BlockId, DataFlowAnalysisTrait, DataFlowDomain, DataFlowResult, FunctionCFG,
-    ProgramCFG,
+    BasicBlock, BlockId, DataFlowAnalysisTrait, DataFlowDirection, DataFlowDomain, DataFlowResult,
+    FunctionCFG, ProgramCFG,
 };
 
 pub struct DataFlowAnalysis;
 
 impl DataFlowAnalysis {
-    pub fn run<T: DataFlowAnalysisTrait>(
-        cfg: &ProgramCFG,
-        analysis: &T,
-    ) -> Vec<DataFlowResult<T::Domain>> {
+    pub fn run<T, D>(cfg: &ProgramCFG, analysis: &T) -> Vec<DataFlowResult<T::Domain>>
+    where
+        D: DataFlowDirection,
+        T: DataFlowAnalysisTrait<D>,
+    {
         let mut result = Vec::new();
 
         for func in cfg.get_functions() {
@@ -23,10 +24,11 @@ impl DataFlowAnalysis {
         result
     }
 
-    fn analyze<T: DataFlowAnalysisTrait>(
-        func: &FunctionCFG,
-        analysis: &T,
-    ) -> DataFlowResult<T::Domain> {
+    fn analyze<T, D>(func: &FunctionCFG, analysis: &T) -> DataFlowResult<T::Domain>
+    where
+        D: DataFlowDirection,
+        T: DataFlowAnalysisTrait<D>,
+    {
         let mut result = DataFlowResult {
             in_facts: Vec::default(),
             out_facts: Vec::default(),
@@ -44,15 +46,18 @@ impl DataFlowAnalysis {
                 .get_block(block_id)
                 .expect("Found block id with no matching basic block.");
 
-            // Calculate IN[B].
-            let input = Self::merge_predecessors(&result, analysis, block);
+            // Calculate:
+            // Direction::Forward => IN[B]
+            // Direction::Bakcward => OUT[B]
+            let source = Self::merge(&result, analysis, block);
 
-            // Calculate OUT[B].
-            let output = analysis.transfer(block, &input);
-            let output_changed = result.out_facts[block_id] != output;
+            // Calculate with the transfer function:
+            // Direction::Forward => OUT[B]
+            // Direction::Bakcward => IN[B]
+            let target = analysis.transfer(block, &source);
 
-            result.in_facts[block_id] = input;
-            result.out_facts[block_id] = output;
+            let output_changed = D::update_facts(&mut result, block_id, source, target);
+
             if output_changed {
                 for &successor in block.get_successors() {
                     if queued.insert(successor) {
@@ -65,14 +70,17 @@ impl DataFlowAnalysis {
     }
 
     /// Initialize the in and out artifacts for the results and the worklist
-    fn init<T: DataFlowAnalysisTrait>(
+    fn init<T, D>(
         func: &FunctionCFG,
         analysis: &T,
         result: &mut DataFlowResult<T::Domain>,
         worklist: &mut VecDeque<BlockId>,
         queued: &mut HashSet<BlockId>,
-    ) {
-        for block in func.get_blocks() {
+    ) where
+        D: DataFlowDirection,
+        T: DataFlowAnalysisTrait<D>,
+    {
+        for block in D::initial_worklist_order(func.get_blocks()) {
             let init = analysis.init();
 
             result.in_facts.push(init.clone());
@@ -83,17 +91,26 @@ impl DataFlowAnalysis {
         }
     }
 
-    /// Merge all predecessors of a block
+    /// Merge all neighbors of a block depending on direction
+    /// Forward:
     /// <code>in_facts[block_id] = merge(out_facts[p] for every predecessor p of block)</code>
-    fn merge_predecessors<T: DataFlowAnalysisTrait>(
+    ///
+    /// Backward:
+    /// <code>out_facts[block_id] = merge(in_facts[p] for every successor p of block)</code>
+    fn merge<T, D>(
         result: &DataFlowResult<T::Domain>,
         analysis: &T,
         block: &BasicBlock,
-    ) -> T::Domain {
+    ) -> T::Domain
+    where
+        D: DataFlowDirection,
+        T: DataFlowAnalysisTrait<D>,
+    {
         let mut input = analysis.init();
+        let facts = D::fact_dependency(result);
 
-        for &predecessor in block.get_predecessors() {
-            if let Some(output) = result.out_facts.get(predecessor) {
+        for &neighbor in D::sources(block) {
+            if let Some(output) = facts.get(neighbor) {
                 input.merge(output);
             }
         }
