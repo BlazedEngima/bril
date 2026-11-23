@@ -1,12 +1,21 @@
-use crate::{
-    dfa::defined::variable::Variable,
-    types::{DataFlowDomain, DataFlowSet},
-};
+use crate::types::{DataFlowDomain, DataFlowSet, elements::Variable};
 
-pub type DefinedVariables = DataFlowSet<Variable>;
+use std::fmt::{Debug, Display, Formatter, Result};
+
+#[derive(Default, Debug, Clone, Eq, PartialEq)]
+pub struct DefinedVariables {
+    pub variables: DataFlowSet<Variable>,
+}
 
 impl DataFlowDomain for DefinedVariables {
     fn merge(&mut self, other: &Self) {
-        self.extend(other.iter().cloned());
+        self.variables.extend(other.variables.iter().cloned());
+    }
+}
+
+impl Display for DefinedVariables {
+    fn fmt(&self, f: &mut Formatter<'_>) -> Result {
+        write!(f, "{}", self.variables)?;
+        Ok(())
     }
 }
